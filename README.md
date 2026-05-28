@@ -75,12 +75,27 @@ Noir Mode applies only to videos with a per-video preset override. Videos are di
 
 ## Usage
 
-In Jellyfin Web, Noir Mode presets can be selected from the video details page near the Video, Audio, and Subtitles selectors. Presets can also be selected from the plugin settings page:
+After the wrapper is configured, Noir Mode is selected per video. Videos without a saved Noir Mode preset continue to play normally.
 
-1. Open the Noir Mode plugin settings.
-2. Search for a video.
-3. Select a Noir Mode preset for that video.
+### Jellyfin Web
+
+1. Open a video details page in the server-hosted Jellyfin Web UI.
+2. Use the **Noir Mode** selector near the Video, Audio, and Subtitles selectors.
+3. Choose **Off** or one of the built-in Noir Mode presets.
 4. Play the video through a Jellyfin playback path that transcodes video.
+
+The Jellyfin Web selector saves the video's server-side Noir Mode override. Other Jellyfin clients use that saved setting when playback transcodes video, even if they do not show a Noir Mode selector.
+
+### Plugin Settings
+
+Administrators can also manage per-video overrides from the Noir Mode plugin settings page:
+
+1. Open Jellyfin Dashboard.
+2. Go to Plugins, then open Noir Mode.
+3. Search for a video.
+4. Select a Noir Mode preset or clear the override.
+
+Plugin configuration, wrapper setup, wrapper rollback, and override management require an elevated Jellyfin administrator session.
 
 ## Rollback
 
