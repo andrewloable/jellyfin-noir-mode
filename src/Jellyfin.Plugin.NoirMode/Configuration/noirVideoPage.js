@@ -6,6 +6,7 @@
     let lastItemId;
     let renderTimer;
     let renderVersion = 0;
+    let selectorPausedUntil = 0;
 
     const api = (path, options) => ApiClient.ajax(Object.assign({
         url: ApiClient.getUrl(path),
@@ -247,7 +248,17 @@
         }
     };
 
+    const pauseSelectorRefresh = () => {
+        selectorPausedUntil = Date.now() + 3000;
+    };
+
+    const isSelectorInteractionActive = () => {
+        const select = document.getElementById(selectId);
+        return !!select && (document.activeElement === select || Date.now() < selectorPausedUntil);
+    };
+
     const stopSelectEvent = event => {
+        pauseSelectorRefresh();
         event.stopPropagation();
     };
 
@@ -264,6 +275,10 @@
         if (!itemId || !window.ApiClient) {
             removeContainer();
             lastItemId = undefined;
+            return;
+        }
+
+        if (isSelectorInteractionActive()) {
             return;
         }
 
@@ -298,9 +313,17 @@
             select.onmousedown = stopSelectEvent;
             select.ontouchstart = stopSelectEvent;
             select.onclick = stopSelectEvent;
+            select.onfocus = pauseSelectorRefresh;
+            select.onblur = () => {
+                selectorPausedUntil = Date.now() + 150;
+                scheduleRender();
+            };
 
             if (lastItemId !== itemId) {
-                select.onchange = () => saveSelection(itemId, select, status);
+                select.onchange = () => {
+                    pauseSelectorRefresh();
+                    saveSelection(itemId, select, status);
+                };
                 lastItemId = itemId;
             }
         } catch (error) {
@@ -314,7 +337,7 @@
 
     const scheduleRender = () => {
         window.clearTimeout(renderTimer);
-        renderTimer = window.setTimeout(render, 150);
+        renderTimer = window.setTimeout(render, isSelectorInteractionActive() ? 750 : 150);
     };
 
     window.addEventListener('hashchange', scheduleRender);
