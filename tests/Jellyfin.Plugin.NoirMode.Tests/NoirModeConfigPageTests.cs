@@ -23,45 +23,41 @@ public sealed class NoirModeConfigPageTests
     }
 
     [Fact]
-    public void VideoPageSelectorReadsApiResponsesCaseInsensitively()
+    public void VideoPageMoreMenuReadsApiResponsesCaseInsensitively()
     {
         var script = File.ReadAllText(FindConfigurationFilePath("noirVideoPage.js"));
 
         Assert.Contains("const read = (value, camelName, fallback)", script);
         Assert.Contains("dataType: 'json'", script);
         Assert.Contains("const asArray = value =>", script);
-        Assert.Contains("const findInsertionAnchor = page =>", script);
-        Assert.Contains("const findModernMediaAnchor = page =>", script);
+        Assert.Contains("const getMenuItemId = target =>", script);
+        Assert.Contains("'.btnMoreCommands, [data-action=\"menu\"]'", script);
+        Assert.Contains("const isSupportedVideoItem = item =>", script);
+        Assert.Contains("itemType === 'Movie'", script);
+        Assert.Contains("itemType === 'Episode'", script);
+        Assert.Contains("mediaType === 'Video'", script);
+        Assert.Contains("const injectNoirMenuItem = () =>", script);
+        Assert.Contains("classList.add(menuItemClass)", script);
+        Assert.Contains("actionSheetMenuItem", script);
+        Assert.Contains("showNoirModeDialog(itemId)", script);
         Assert.Contains("const presetItems = asArray(presets)", script);
-        Assert.Contains("className = 'selectContainer noirModeSelectionContainer trackSelectionFieldContainer flex-shrink-zero'", script);
-        Assert.Contains("document.createElement('select', { is: 'emby-select' })", script);
-        Assert.Contains("className = 'selectNoirMode detailTrackSelect emby-select-withcolor emby-select noirModeNativeSelect'", script);
-        Assert.Contains("select.setAttribute('is', 'emby-select')", script);
-        Assert.Contains("select.setAttribute('label', '')", script);
-        Assert.Contains("className = 'selectArrowContainer'", script);
-        Assert.Contains("className = 'selectArrow material-icons keyboard_arrow_down'", script);
-        Assert.Contains("event.stopPropagation()", script);
-        Assert.Contains("select.onmousedown = stopSelectEvent", script);
-        Assert.Contains("select.ontouchstart = stopSelectEvent", script);
-        Assert.Contains("const isSelectorInteractionActive = () =>", script);
-        Assert.Contains("if (isSelectorInteractionActive())", script);
-        Assert.Contains("select.onfocus = pauseSelectorRefresh", script);
-        Assert.Contains("select.onblur = () =>", script);
-        Assert.Contains("isSelectorInteractionActive() ? 750 : 150", script);
         Assert.Contains("const isPresetMode = mode =>", script);
         Assert.Contains("mode.toLowerCase() === 'preset'", script);
         Assert.Contains("read(override, 'mode', 0)", script);
         Assert.Contains("read(preset, 'id', '')", script);
         Assert.Contains("routeMatch[1].replaceAll('-', '')", script);
         Assert.Contains("const [presets, override] = await Promise.all", script);
-        Assert.Contains("const container = ensureContainer(page, anchor);", script);
+        Assert.Contains("document.addEventListener('click', handleMoreMenuClick, true)", script);
         Assert.True(
             script.IndexOf("const [presets, override] = await Promise.all", StringComparison.Ordinal)
-                < script.IndexOf("const container = ensureContainer(page, anchor);", StringComparison.Ordinal),
-            "The selector should not be inserted until its API data has loaded.");
-        Assert.DoesNotContain("ApiClient.getItem", script);
+                < script.IndexOf("scroller.replaceChildren(...buttons);", StringComparison.Ordinal),
+            "The preset menu should not be populated until its API data has loaded.");
+        Assert.Contains("ApiClient.getItem", script);
         Assert.DoesNotContain("override.mode", script);
         Assert.DoesNotContain("preset.id", script);
+        Assert.DoesNotContain("trackSelections", script);
+        Assert.DoesNotContain("selectContainer", script);
+        Assert.DoesNotContain("document.createElement('select'", script);
         Assert.DoesNotContain("min-height: 2em", script);
         Assert.DoesNotContain("grid-template-columns", script);
         Assert.DoesNotContain("getBoundingClientRect", script);

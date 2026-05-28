@@ -1,12 +1,10 @@
 (() => {
-    const containerId = 'noirModeVideoPageSelection';
-    const selectId = 'noirModeVideoPageSelect';
-    const styleId = 'noirModeVideoPageStyles';
+    const styleId = 'noirModeMenuStyles';
+    const menuItemClass = 'noirModeMenuItem';
+    const dialogId = 'noirModePresetDialog';
+    const commandId = 'noirmode';
     let presetsPromise;
-    let lastItemId;
-    let renderTimer;
-    let renderVersion = 0;
-    let selectorPausedUntil = 0;
+    let pendingMenuItem;
 
     const api = (path, options) => ApiClient.ajax(Object.assign({
         url: ApiClient.getUrl(path),
@@ -76,62 +74,19 @@
         return new URLSearchParams(window.location.search).get('id');
     };
 
-    const isMediaLabel = element => {
-        const text = element.textContent ? element.textContent.trim() : '';
-        return text === 'Video' || text === 'Audio' || text === 'Subtitles';
-    };
-
-    const findModernMediaAnchor = page => {
-        const labels = Array.from(page.querySelectorAll('label, span, div, p'))
-            .filter(element => element.children.length === 0 && isMediaLabel(element));
-        const subtitleLabel = labels.find(element => element.textContent.trim() === 'Subtitles');
-        const label = subtitleLabel || labels[labels.length - 1];
-
-        if (!label) {
+    const getMenuItemId = target => {
+        const menuButton = target.closest('.btnMoreCommands, [data-action="menu"]');
+        if (!menuButton) {
             return null;
         }
 
-        return label.closest('[class*="MuiGrid"], [class*="item"], [class*="row"]')
-            || label.parentElement;
-    };
-
-    const findInsertionAnchor = page => {
-        const subtitleContainer = page.querySelector('.selectSubtitlesContainer');
-        if (subtitleContainer && !subtitleContainer.classList.contains('hide')) {
-            return subtitleContainer;
+        const selectedSource = document.querySelector('.itemDetailPage .selectSource');
+        if (menuButton.classList.contains('btnMoreCommands') && selectedSource && selectedSource.value) {
+            return selectedSource.value;
         }
 
-        return page.querySelector('.trackSelections')
-            || page.querySelector('.selectAudioContainer')
-            || page.querySelector('.selectVideoContainer')
-            || findModernMediaAnchor(page);
-    };
-
-    const ensureStyles = () => {
-        if (document.getElementById(styleId)) {
-            return;
-        }
-
-        const style = document.createElement('style');
-        style.id = styleId;
-        style.textContent = `
-            #${containerId} {
-                margin: 0;
-            }
-
-            #${containerId} .selectLabel {
-                margin: 0;
-            }
-
-            #${containerId} .noirModeNativeSelect {
-                box-sizing: border-box;
-            }
-
-            #${containerId} .noirModeStatus {
-                display: none;
-            }
-        `;
-        document.head.appendChild(style);
+        const itemElement = menuButton.closest('[data-id]');
+        return itemElement ? itemElement.getAttribute('data-id') : getRouteItemId();
     };
 
     const getPresets = () => {
@@ -142,234 +97,279 @@
         return presetsPromise;
     };
 
-    const createContainer = () => {
-        const container = document.createElement('div');
-        container.id = containerId;
-        container.className = 'selectContainer noirModeSelectionContainer trackSelectionFieldContainer flex-shrink-zero';
-
-        const label = document.createElement('label');
-        label.className = 'selectLabel';
-        label.htmlFor = selectId;
-        label.textContent = 'Noir Mode';
-
-        let select;
-        try {
-            select = document.createElement('select', { is: 'emby-select' });
-        } catch {
-            select = document.createElement('select');
+    const getCurrentUserId = () => {
+        if (ApiClient.getCurrentUserId) {
+            return ApiClient.getCurrentUserId();
         }
 
-        select.id = selectId;
-        select.className = 'selectNoirMode detailTrackSelect emby-select-withcolor emby-select noirModeNativeSelect';
-        select.setAttribute('is', 'emby-select');
-        select.setAttribute('label', '');
-
-        const arrowContainer = document.createElement('div');
-        arrowContainer.className = 'selectArrowContainer';
-
-        const arrowSizer = document.createElement('div');
-        arrowSizer.style.visibility = 'hidden';
-        arrowSizer.style.display = 'none';
-        arrowSizer.textContent = '0';
-
-        const arrow = document.createElement('span');
-        arrow.className = 'selectArrow material-icons keyboard_arrow_down';
-        arrow.setAttribute('aria-hidden', 'true');
-        arrowContainer.append(arrowSizer, arrow);
-
-        const status = document.createElement('div');
-        status.className = 'fieldDescription noirModeStatus';
-        status.setAttribute('aria-live', 'polite');
-
-        container.append(label, select, arrowContainer, status);
-        return container;
+        return null;
     };
 
-    const ensureContainer = (page, anchor) => {
-        ensureStyles();
-
-        let container = document.getElementById(containerId);
-        if (!container) {
-            container = createContainer();
+    const getItem = itemId => {
+        const userId = getCurrentUserId();
+        if (ApiClient.getItem && userId) {
+            return ApiClient.getItem(userId, itemId);
         }
 
-        if (anchor && !anchor.classList.contains('trackSelections')) {
-            anchor.insertAdjacentElement('afterend', container);
-            return container;
+        if (!userId) {
+            return Promise.reject(new Error('No Jellyfin user is available for Noir Mode item lookup.'));
         }
 
-        if (anchor) {
-            anchor.insertAdjacentElement('afterend', container);
-            return container;
-        }
-
-        const detailContent = page.querySelector('.detailPageContent') || page.querySelector('.mainDetailButtons') || page;
-        detailContent.appendChild(container);
-        return container;
+        return api(`Users/${encodeURIComponent(userId)}/Items/${encodeURIComponent(itemId)}`);
     };
 
-    const setOptions = (select, presets, override) => {
-        const selectedPreset = read(override, 'presetId', '');
-        const selectedValue = isPresetMode(read(override, 'mode', 0)) && selectedPreset ? selectedPreset : 'off';
-        const currentValues = Array.from(select.options).map(option => `${option.value}:${option.textContent}`).join('|');
-        const presetItems = asArray(presets);
-        const nextValues = [`off:Off`, ...presetItems.map(preset => `${read(preset, 'id', '')}:${read(preset, 'label', '')}`)].join('|');
+    const isSupportedVideoItem = item => {
+        const itemType = read(item, 'type', '');
+        const mediaType = read(item, 'mediaType', '');
+        const isFolder = read(item, 'isFolder', false);
+        return !isFolder && (
+            itemType === 'Movie'
+            || itemType === 'Episode'
+            || itemType === 'Video'
+            || mediaType === 'Video'
+        );
+    };
 
-        if (currentValues === nextValues) {
-            select.value = selectedValue;
+    const ensureStyles = () => {
+        if (document.getElementById(styleId)) {
             return;
         }
 
-        select.replaceChildren();
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+            .${menuItemClass} .material-icons {
+                color: inherit;
+            }
 
-        const off = document.createElement('option');
-        off.value = 'off';
-        off.textContent = 'Off';
-        select.appendChild(off);
+            .noirModeDialogBackdrop {
+                align-items: center;
+                background: rgba(0, 0, 0, .58);
+                bottom: 0;
+                display: flex;
+                justify-content: center;
+                left: 0;
+                position: fixed;
+                right: 0;
+                top: 0;
+                z-index: 99999;
+            }
 
-        for (const preset of presetItems) {
-            const option = document.createElement('option');
-            option.value = read(preset, 'id', '');
-            option.textContent = read(preset, 'label', '');
-            select.appendChild(option);
-        }
+            .noirModeDialog {
+                background: #202020;
+                box-shadow: 0 1em 3em rgba(0, 0, 0, .45);
+                color: inherit;
+                max-height: min(80vh, 34em);
+                max-width: min(92vw, 28em);
+                min-width: min(92vw, 20em);
+                overflow: hidden;
+            }
 
-        select.value = selectedValue;
+            .noirModeDialog .actionSheetScroller {
+                max-height: 23em;
+                overflow-y: auto;
+            }
+
+            .noirModeDialogStatus {
+                min-height: 1.5em;
+                padding: .6em 1.25em 1em;
+            }
+        `;
+        document.head.appendChild(style);
     };
 
-    const saveSelection = async (itemId, select, status) => {
-        select.disabled = true;
+    const closeNoirDialog = () => {
+        const dialog = document.getElementById(dialogId);
+        if (dialog) {
+            dialog.remove();
+        }
+    };
+
+    const createActionButton = (id, icon, name, selected) => {
+        const button = document.createElement('button');
+        button.setAttribute('is', 'emby-button');
+        button.type = 'button';
+        button.className = 'listItem listItem-button actionSheetMenuItem';
+        button.dataset.id = id;
+
+        const iconElement = document.createElement('span');
+        iconElement.className = `actionsheetMenuItemIcon listItemIcon listItemIcon-transparent material-icons ${selected ? 'check' : icon}`;
+        iconElement.setAttribute('aria-hidden', 'true');
+
+        const body = document.createElement('div');
+        body.className = 'listItemBody actionsheetListItemBody';
+
+        const text = document.createElement('div');
+        text.className = 'listItemBodyText actionSheetItemText';
+        text.textContent = name;
+
+        body.appendChild(text);
+        button.append(iconElement, body);
+        return button;
+    };
+
+    const saveSelection = async (itemId, presetId, status) => {
         status.textContent = 'Saving...';
 
-        try {
-            if (select.value === 'off') {
-                await api(`NoirMode/items/${encodeURIComponent(itemId)}/override`, {
-                    type: 'PUT',
-                    data: JSON.stringify({ itemId, mode: 1, presetId: null })
-                });
-            } else {
-                await api(`NoirMode/items/${encodeURIComponent(itemId)}/override`, {
-                    type: 'PUT',
-                    data: JSON.stringify({ itemId, mode: 2, presetId: select.value })
-                });
+        if (presetId === 'off') {
+            await api(`NoirMode/items/${encodeURIComponent(itemId)}/override`, {
+                type: 'PUT',
+                data: JSON.stringify({ itemId, mode: 1, presetId: null })
+            });
+            return;
+        }
+
+        await api(`NoirMode/items/${encodeURIComponent(itemId)}/override`, {
+            type: 'PUT',
+            data: JSON.stringify({ itemId, mode: 2, presetId })
+        });
+    };
+
+    const showNoirModeDialog = async itemId => {
+        closeNoirDialog();
+        ensureStyles();
+
+        const backdrop = document.createElement('div');
+        backdrop.id = dialogId;
+        backdrop.className = 'noirModeDialogBackdrop';
+
+        const dialog = document.createElement('div');
+        dialog.className = 'noirModeDialog actionSheet actionsheet-not-fullscreen';
+        dialog.setAttribute('role', 'dialog');
+        dialog.setAttribute('aria-modal', 'true');
+        dialog.setAttribute('aria-label', 'Noir Mode');
+
+        const content = document.createElement('div');
+        content.className = 'actionSheetContent';
+
+        const title = document.createElement('h1');
+        title.className = 'actionSheetTitle';
+        title.textContent = 'Noir Mode';
+
+        const scroller = document.createElement('div');
+        scroller.className = 'actionSheetScroller scrollY';
+
+        const status = document.createElement('div');
+        status.className = 'fieldDescription noirModeDialogStatus';
+        status.setAttribute('aria-live', 'polite');
+        status.textContent = 'Loading...';
+
+        content.append(title, scroller, status);
+        dialog.appendChild(content);
+        backdrop.appendChild(dialog);
+        document.body.appendChild(backdrop);
+
+        backdrop.addEventListener('click', event => {
+            if (event.target === backdrop) {
+                closeNoirDialog();
             }
-
-            status.textContent = 'Saved';
-        } catch (error) {
-            console.error('Noir Mode selection save failed', error);
-            status.textContent = 'Save failed';
-        } finally {
-            select.disabled = false;
-        }
-    };
-
-    const pauseSelectorRefresh = () => {
-        selectorPausedUntil = Date.now() + 3000;
-    };
-
-    const isSelectorInteractionActive = () => {
-        const select = document.getElementById(selectId);
-        return !!select && (document.activeElement === select || Date.now() < selectorPausedUntil);
-    };
-
-    const stopSelectEvent = event => {
-        pauseSelectorRefresh();
-        event.stopPropagation();
-    };
-
-    const removeContainer = () => {
-        const container = document.getElementById(containerId);
-        if (container) {
-            container.remove();
-        }
-    };
-
-    const render = async () => {
-        const version = ++renderVersion;
-        const itemId = getRouteItemId();
-        if (!itemId || !window.ApiClient) {
-            removeContainer();
-            lastItemId = undefined;
-            return;
-        }
-
-        if (isSelectorInteractionActive()) {
-            return;
-        }
-
-        const page = document.querySelector('.itemDetailPage') || document.body;
-        if (!page) {
-            return;
-        }
+        });
 
         try {
-            const anchor = findInsertionAnchor(page);
-            if (!anchor) {
-                removeContainer();
-                lastItemId = undefined;
-                return;
-            }
-
             const [presets, override] = await Promise.all([
                 getPresets(),
                 api(`NoirMode/items/${encodeURIComponent(itemId)}/override`)
             ]);
-            if (version !== renderVersion) {
-                return;
-            }
+            const selectedPreset = read(override, 'presetId', '');
+            const selectedValue = isPresetMode(read(override, 'mode', 0)) && selectedPreset ? selectedPreset : 'off';
+            const presetItems = asArray(presets);
+            const buttons = [
+                createActionButton('off', 'filter_b_and_w', 'Off', selectedValue === 'off'),
+                ...presetItems.map(preset => {
+                    const id = read(preset, 'id', '');
+                    return createActionButton(id, 'filter_b_and_w', read(preset, 'label', id), selectedValue === id);
+                })
+            ];
 
-            const container = ensureContainer(page, anchor);
-            const select = container.querySelector('select');
-            const status = container.querySelector('.noirModeStatus');
-
-            setOptions(select, presets, override);
+            scroller.replaceChildren(...buttons);
             status.textContent = '';
-            select.onpointerdown = stopSelectEvent;
-            select.onmousedown = stopSelectEvent;
-            select.ontouchstart = stopSelectEvent;
-            select.onclick = stopSelectEvent;
-            select.onfocus = pauseSelectorRefresh;
-            select.onblur = () => {
-                selectorPausedUntil = Date.now() + 150;
-                scheduleRender();
-            };
 
-            if (lastItemId !== itemId) {
-                select.onchange = () => {
-                    pauseSelectorRefresh();
-                    saveSelection(itemId, select, status);
-                };
-                lastItemId = itemId;
+            for (const button of buttons) {
+                button.addEventListener('click', async () => {
+                    scroller.querySelectorAll('button').forEach(menuButton => {
+                        menuButton.disabled = true;
+                    });
+
+                    try {
+                        await saveSelection(itemId, button.dataset.id, status);
+                        status.textContent = 'Saved';
+                        window.setTimeout(closeNoirDialog, 350);
+                    } catch (error) {
+                        console.error('Noir Mode selection save failed', error);
+                        status.textContent = 'Save failed';
+                        scroller.querySelectorAll('button').forEach(menuButton => {
+                            menuButton.disabled = false;
+                        });
+                    }
+                });
             }
         } catch (error) {
-            console.debug('Noir Mode video page selection skipped', error);
-            if (!lastItemId || lastItemId !== itemId) {
-                removeContainer();
-                lastItemId = undefined;
-            }
+            console.error('Noir Mode menu failed to load', error);
+            status.textContent = 'Noir Mode could not load for this item.';
         }
     };
 
-    const scheduleRender = () => {
-        window.clearTimeout(renderTimer);
-        renderTimer = window.setTimeout(render, isSelectorInteractionActive() ? 750 : 150);
+    const createNoirMenuItem = itemId => {
+        const button = createActionButton(commandId, 'filter_b_and_w', 'Noir Mode', false);
+        button.classList.add(menuItemClass);
+        button.addEventListener('click', () => {
+            window.setTimeout(() => showNoirModeDialog(itemId), 50);
+        });
+        return button;
     };
 
-    window.addEventListener('hashchange', scheduleRender);
-    window.addEventListener('popstate', scheduleRender);
-    document.addEventListener('viewshow', scheduleRender);
-    document.addEventListener('pageshow', scheduleRender);
-
-    new MutationObserver(mutations => {
-        if (mutations.every(mutation => mutation.target.closest && mutation.target.closest(`#${containerId}`))) {
+    const injectNoirMenuItem = () => {
+        if (!pendingMenuItem || pendingMenuItem.expiresAt < Date.now() || !pendingMenuItem.item) {
             return;
         }
 
-        scheduleRender();
-    }).observe(document.body, {
+        const actionSheet = document.querySelector('.actionSheet');
+        const scroller = actionSheet ? actionSheet.querySelector('.actionSheetScroller') : null;
+        if (!scroller || scroller.querySelector(`.${menuItemClass}`)) {
+            return;
+        }
+
+        const firstDivider = scroller.querySelector('.actionsheetDivider');
+        const menuItem = createNoirMenuItem(pendingMenuItem.itemId);
+        if (firstDivider) {
+            firstDivider.insertAdjacentElement('afterend', menuItem);
+        } else {
+            scroller.appendChild(menuItem);
+        }
+    };
+
+    const handleMoreMenuClick = event => {
+        const itemId = getMenuItemId(event.target);
+        if (!itemId || !window.ApiClient) {
+            return;
+        }
+
+        pendingMenuItem = {
+            itemId,
+            expiresAt: Date.now() + 5000,
+            item: null
+        };
+
+        getItem(itemId)
+            .then(item => {
+                if (!pendingMenuItem || pendingMenuItem.itemId !== itemId || !isSupportedVideoItem(item)) {
+                    return;
+                }
+
+                pendingMenuItem.item = item;
+                injectNoirMenuItem();
+            })
+            .catch(error => {
+                console.debug('Noir Mode More menu item skipped', error);
+            });
+    };
+
+    ensureStyles();
+
+    document.addEventListener('click', handleMoreMenuClick, true);
+
+    new MutationObserver(injectNoirMenuItem).observe(document.body, {
         childList: true,
         subtree: true
     });
-
-    scheduleRender();
 })();
