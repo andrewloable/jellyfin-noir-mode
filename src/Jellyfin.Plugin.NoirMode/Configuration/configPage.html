@@ -35,31 +35,6 @@
                             <span>Restore FFmpeg</span>
                         </button>
                     </div>
-                    <div class="sectionTitleContainer">
-                        <h3 class="sectionTitle">Per-video override</h3>
-                    </div>
-                    <div class="inputContainer">
-                        <label class="inputLabel" for="ItemSearch">Search videos</label>
-                        <input is="emby-input" id="ItemSearch" type="text" />
-                    </div>
-                    <button is="emby-button" type="button" class="raised" id="SearchItems">
-                        <span>Search</span>
-                    </button>
-                    <div class="selectContainer" id="ItemSearchResultsContainer" style="display: none;">
-                        <label class="selectLabel" for="ItemSearchResults">Video</label>
-                        <select is="emby-select" id="ItemSearchResults"></select>
-                    </div>
-                    <div class="fieldDescription" id="ItemSearchStatus"></div>
-                    <div class="selectContainer">
-                        <label class="selectLabel" for="PresetId">Preset</label>
-                        <select is="emby-select" id="PresetId"></select>
-                    </div>
-                    <button is="emby-button" type="button" class="raised button-submit" id="SaveItemOverride">
-                        <span>Save override</span>
-                    </button>
-                    <button is="emby-button" type="button" class="raised" id="ClearItemOverride">
-                        <span>Clear override</span>
-                    </button>
                 </form>
             </div>
         </div>
@@ -75,7 +50,6 @@
 
                 let latestConfig = {};
                 let latestStatus = {};
-                let selectedItemId = '';
 
                 const read = (value, camelName, fallback) => {
                     if (!value) {
@@ -94,39 +68,8 @@
                     return fallback;
                 };
 
-                const asArray = value => {
-                    if (Array.isArray(value)) {
-                        return value;
-                    }
-
-                    if (typeof value === 'string' && value) {
-                        try {
-                            const parsed = JSON.parse(value);
-                            return Array.isArray(parsed) ? parsed : [];
-                        } catch (error) {
-                            console.debug('Noir Mode response was not a JSON array', error);
-                            return [];
-                        }
-                    }
-
-                    return [];
-                };
-
                 const setBusy = (button, busy) => {
                     button.disabled = busy;
-                };
-
-                const setOptions = (select, items, getValue, getLabel) => {
-                    while (select.firstChild) {
-                        select.removeChild(select.firstChild);
-                    }
-
-                    for (const item of asArray(items)) {
-                        const option = document.createElement('option');
-                        option.value = getValue(item);
-                        option.textContent = getLabel(item);
-                        select.appendChild(option);
-                    }
                 };
 
                 const loadStatus = async () => {
@@ -160,12 +103,6 @@
                     latestConfig = config;
                     document.querySelector('#NoirEnabled').checked = read(config, 'enabled', false);
                     await loadStatus();
-                    const presets = asArray(await api('NoirMode/presets'));
-                    setOptions(
-                        document.querySelector('#PresetId'),
-                        presets,
-                        preset => read(preset, 'id', ''),
-                        preset => read(preset, 'label', ''));
                 });
 
                 document.querySelector('#NoirModeConfigForm').addEventListener('submit', async (event) => {
@@ -210,57 +147,6 @@
                 document.querySelector('#TestWrapper').addEventListener('click', async () => {
                     const result = await api('NoirMode/wrapper/test', { type: 'POST' });
                     Dashboard.alert(read(result, 'output', '') || (read(result, 'success', false) ? 'Wrapper test passed.' : 'Wrapper test failed.'));
-                });
-
-                document.querySelector('#SaveItemOverride').addEventListener('click', async () => {
-                    const itemId = selectedItemId;
-                    if (!itemId) {
-                        Dashboard.alert('Select a video first.');
-                        return;
-                    }
-
-                    const presetId = document.querySelector('#PresetId').value;
-                    await api('NoirMode/items/' + encodeURIComponent(itemId) + '/override', {
-                        type: 'PUT',
-                        data: JSON.stringify({ itemId, mode: 2, presetId })
-                    });
-                    Dashboard.alert('Noir Mode item override saved.');
-                });
-
-                document.querySelector('#SearchItems').addEventListener('click', async () => {
-                    const query = encodeURIComponent(document.querySelector('#ItemSearch').value || '');
-                    const items = asArray(await api('NoirMode/items/search?query=' + query));
-                    const results = document.querySelector('#ItemSearchResults');
-                    setOptions(
-                        results,
-                        items,
-                        item => read(item, 'itemId', ''),
-                        item => read(item, 'name', ''));
-
-                    document.querySelector('#ItemSearchResultsContainer').style.display = items.length ? '' : 'none';
-                    document.querySelector('#ItemSearchStatus').textContent = items.length
-                        ? items.length + ' video' + (items.length === 1 ? '' : 's') + ' found.'
-                        : 'No matching videos found.';
-
-                    selectedItemId = '';
-                    if (items.length > 0) {
-                        selectedItemId = read(items[0], 'itemId', '');
-                    }
-                });
-
-                document.querySelector('#ItemSearchResults').addEventListener('change', event => {
-                    selectedItemId = event.target.value;
-                });
-
-                document.querySelector('#ClearItemOverride').addEventListener('click', async () => {
-                    const itemId = selectedItemId;
-                    if (!itemId) {
-                        Dashboard.alert('Select a video first.');
-                        return;
-                    }
-
-                    await api('NoirMode/items/' + encodeURIComponent(itemId) + '/override', { type: 'DELETE' });
-                    Dashboard.alert('Noir Mode item override cleared.');
                 });
             })();
         </script>

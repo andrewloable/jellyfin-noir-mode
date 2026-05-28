@@ -9,11 +9,15 @@ public sealed class NoirModeConfigPageTests
 
         Assert.Contains("const read = (value, camelName, fallback)", page);
         Assert.Contains("dataType: 'json'", page);
-        Assert.Contains("const asArray = value =>", page);
         Assert.Contains("read(config, 'enabled', false)", page);
         Assert.DoesNotContain("config.enabled", page);
         Assert.DoesNotContain("status.jellyfinUsesWrapper", page);
         Assert.DoesNotContain("replaceChildren", page);
+        Assert.DoesNotContain("Per-video override", page);
+        Assert.DoesNotContain("ItemSearch", page);
+        Assert.DoesNotContain("PresetId", page);
+        Assert.DoesNotContain("SaveItemOverride", page);
+        Assert.DoesNotContain("ClearItemOverride", page);
     }
 
     [Fact]
