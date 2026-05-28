@@ -32,6 +32,7 @@ foreach ($fileName in @(
 }
 
 Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination $pluginOut
+Copy-Item -LiteralPath (Join-Path $root 'src/Jellyfin.Plugin.NoirMode/Images/plugin.png') -Destination (Join-Path $pluginOut 'plugin.png')
 Copy-Item -LiteralPath (Join-Path $root 'build.yaml') -Destination $artifacts
 
 $releaseBaseUrl = 'https://github.com/andrewloable/jellyfin-noir-mode/releases/download/v0.1.0'
@@ -94,6 +95,7 @@ function New-RepositoryManifest {
             overview = 'Apply allowlisted noir filters during Jellyfin transcoding for explicitly configured videos.'
             owner = 'andrewloable'
             category = 'General'
+            imagePath = 'plugin.png'
             versions = @(
                 [ordered]@{
                     version = '0.1.0.0'
@@ -135,5 +137,8 @@ foreach ($package in $packages) {
     New-RepositoryManifest -Path (Join-Path $artifacts $package.Manifest) -SourceUrl "$releaseBaseUrl/$assetName" -Checksum $md5
 }
 Copy-Item -LiteralPath (Join-Path $artifacts 'manifest-linux-x64.json') -Destination (Join-Path $artifacts 'manifest.json')
+foreach ($manifestName in @('manifest-windows-x64.json', 'manifest-linux-x64.json', 'manifest-macos.json', 'manifest.json')) {
+    Copy-Item -LiteralPath (Join-Path $artifacts $manifestName) -Destination (Join-Path $root $manifestName)
+}
 
 Write-Host "Artifacts written to $artifacts"
