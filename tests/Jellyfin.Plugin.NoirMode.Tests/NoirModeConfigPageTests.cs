@@ -33,10 +33,13 @@ public sealed class NoirModeConfigPageTests
         Assert.Contains("const findInsertionAnchor = page =>", script);
         Assert.Contains("const findModernMediaAnchor = page =>", script);
         Assert.Contains("const presetItems = asArray(presets)", script);
-        Assert.Contains("className = 'emby-select-withcolor emby-select noirModeNativeSelect'", script);
-        Assert.Contains("grid-template-columns: 6em minmax(12em, 37.5em)", script);
-        Assert.Contains("column-gap: 0", script);
-        Assert.Contains("max-width: 43.5em", script);
+        Assert.Contains("className = 'selectContainer noirModeSelectionContainer trackSelectionFieldContainer flex-shrink-zero'", script);
+        Assert.Contains("document.createElement('select', { is: 'emby-select' })", script);
+        Assert.Contains("className = 'selectNoirMode detailTrackSelect emby-select-withcolor emby-select noirModeNativeSelect'", script);
+        Assert.Contains("select.setAttribute('is', 'emby-select')", script);
+        Assert.Contains("select.setAttribute('label', '')", script);
+        Assert.Contains("className = 'selectArrowContainer'", script);
+        Assert.Contains("className = 'selectArrow material-icons keyboard_arrow_down'", script);
         Assert.Contains("event.stopPropagation()", script);
         Assert.Contains("select.onmousedown = stopSelectEvent", script);
         Assert.Contains("select.ontouchstart = stopSelectEvent", script);
@@ -59,6 +62,9 @@ public sealed class NoirModeConfigPageTests
         Assert.DoesNotContain("ApiClient.getItem", script);
         Assert.DoesNotContain("override.mode", script);
         Assert.DoesNotContain("preset.id", script);
+        Assert.DoesNotContain("min-height: 2em", script);
+        Assert.DoesNotContain("grid-template-columns", script);
+        Assert.DoesNotContain("getBoundingClientRect", script);
     }
 
     [Fact]

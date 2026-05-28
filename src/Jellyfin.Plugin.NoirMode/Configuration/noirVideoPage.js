@@ -116,31 +116,19 @@
         style.id = styleId;
         style.textContent = `
             #${containerId} {
-                display: grid;
-                grid-template-columns: 6em minmax(12em, 37.5em);
-                align-items: center;
-                column-gap: 0;
-                margin: .25em 0;
-                max-width: 43.5em;
+                margin: 0;
             }
 
             #${containerId} .selectLabel {
                 margin: 0;
-                align-self: center;
-                line-height: 2em;
             }
 
             #${containerId} .noirModeNativeSelect {
                 box-sizing: border-box;
-                margin: 0;
-                max-width: none;
-                min-height: 2em;
-                width: 100%;
             }
 
             #${containerId} .noirModeStatus {
-                grid-column: 2;
-                min-height: 1.25em;
+                display: none;
             }
         `;
         document.head.appendChild(style);
@@ -157,22 +145,43 @@
     const createContainer = () => {
         const container = document.createElement('div');
         container.id = containerId;
-        container.className = 'noirModeSelectionContainer';
+        container.className = 'selectContainer noirModeSelectionContainer trackSelectionFieldContainer flex-shrink-zero';
 
         const label = document.createElement('label');
         label.className = 'selectLabel';
         label.htmlFor = selectId;
         label.textContent = 'Noir Mode';
 
-        const select = document.createElement('select');
+        let select;
+        try {
+            select = document.createElement('select', { is: 'emby-select' });
+        } catch {
+            select = document.createElement('select');
+        }
+
         select.id = selectId;
-        select.className = 'emby-select-withcolor emby-select noirModeNativeSelect';
+        select.className = 'selectNoirMode detailTrackSelect emby-select-withcolor emby-select noirModeNativeSelect';
+        select.setAttribute('is', 'emby-select');
+        select.setAttribute('label', '');
+
+        const arrowContainer = document.createElement('div');
+        arrowContainer.className = 'selectArrowContainer';
+
+        const arrowSizer = document.createElement('div');
+        arrowSizer.style.visibility = 'hidden';
+        arrowSizer.style.display = 'none';
+        arrowSizer.textContent = '0';
+
+        const arrow = document.createElement('span');
+        arrow.className = 'selectArrow material-icons keyboard_arrow_down';
+        arrow.setAttribute('aria-hidden', 'true');
+        arrowContainer.append(arrowSizer, arrow);
 
         const status = document.createElement('div');
         status.className = 'fieldDescription noirModeStatus';
         status.setAttribute('aria-live', 'polite');
 
-        container.append(label, select, status);
+        container.append(label, select, arrowContainer, status);
         return container;
     };
 
