@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Jellyfin.Plugin.NoirMode.Core/Jellyfin.Plugin.NoirMode.Core.csproj" />
+    <Project Path="src/Jellyfin.Plugin.NoirMode.Wrapper/Jellyfin.Plugin.NoirMode.Wrapper.csproj" />
+    <Project Path="src/Jellyfin.Plugin.NoirMode/Jellyfin.Plugin.NoirMode.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Jellyfin.Plugin.NoirMode.Tests/Jellyfin.Plugin.NoirMode.Tests.csproj" />
+  </Folder>
+</Solution>

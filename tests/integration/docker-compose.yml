@@ -1,0 +1,15 @@
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:10.11.0
+    container_name: jellyfin-noir-mode-test
+    ports:
+      - "8096:8096"
+    environment:
+      - NOIR_REAL_FFMPEG=/usr/lib/jellyfin-ffmpeg/ffmpeg
+      - NOIR_STATE_FILE=/config/plugins/configurations/jellyfin-noir-mode-state.json
+    volumes:
+      - ./config:/config
+      - ./cache:/cache
+      - ./media:/media:ro
+      - ../../artifacts/plugin:/config/plugins/Noir Mode:ro
+      - ../../artifacts/wrapper/linux-x64:/wrapper:ro

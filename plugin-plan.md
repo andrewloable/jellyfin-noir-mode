@@ -232,7 +232,7 @@ Initial support should handle common Jellyfin transcode commands:
 
 - If `-vf` exists, append the noir filter with a comma.
 - If no `-vf` exists, insert `-vf <filter>` before the output path.
-- If video codec is stream copy, replace video copy with a configured encoder or reject with a clear log message.
+- If video codec is stream copy, skip injection and log a clear `video-stream-copy-unsupported` decision.
 - Preserve audio, subtitle, mapping, bitrate, and output arguments.
 
 Initial version should not modify complex filter graphs. If the command contains `-filter_complex`, the wrapper should log that noir mode was skipped for that playback unless explicit support has been implemented and tested.
@@ -262,7 +262,7 @@ Add a Jellyfin Web enhancement only after the server-side flow is working:
 - Add a noir toggle button to the video player.
 - Add a preset selector.
 - Write the selected mode through the plugin API.
-- Store temporary state keyed by item and current playback context where possible.
+- Save or clear the current video's item override through the plugin API.
 
 This does not automatically cover Android, iOS, Roku, Android TV, Swiftfin, Finamp, Infuse, Kodi, or other clients. Those clients rely on saved per-video server-side overrides.
 

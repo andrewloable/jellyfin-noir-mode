@@ -1,0 +1,17 @@
+---
+name: "Noir Mode"
+guid: "f1bb7d16-9084-4e42-94fb-ff4e0f17470b"
+version: "0.1.0.0"
+targetAbi: "10.11.0.0"
+framework: "net9.0"
+overview: "Per-video black-and-white Noir Mode playback using a server-side FFmpeg wrapper."
+description: >
+  Applies allowlisted noir FFmpeg filters during Jellyfin video transcoding for videos
+  with explicit per-item overrides. Videos are disabled by default.
+category: "General"
+owner: "loabletech"
+artifacts:
+- "Jellyfin.Plugin.NoirMode.dll"
+- "Jellyfin.Plugin.NoirMode.Core.dll"
+changelog: >
+  Initial MVP implementation scaffold.

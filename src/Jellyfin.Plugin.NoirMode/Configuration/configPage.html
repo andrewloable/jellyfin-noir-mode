@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Noir Mode</title>
+</head>
+<body>
+    <div id="NoirModeConfigPage" data-role="page" class="page type-interior pluginConfigurationPage">
+        <div data-role="content">
+            <div class="content-primary">
+                <form id="NoirModeConfigForm">
+                    <div class="sectionTitleContainer">
+                        <h2 class="sectionTitle">Noir Mode</h2>
+                    </div>
+                    <label class="checkboxContainer">
+                        <input is="emby-checkbox" type="checkbox" id="NoirEnabled" />
+                        <span>Enable Noir Mode wrapper support</span>
+                    </label>
+                    <div class="inputContainer">
+                        <label class="inputLabel" for="RealFFmpegPath">Real FFmpeg path</label>
+                        <input is="emby-input" id="RealFFmpegPath" type="text" />
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel" for="WrapperPath">Wrapper path configured in Jellyfin</label>
+                        <input is="emby-input" id="WrapperPath" type="text" />
+                    </div>
+                    <div class="sectionTitleContainer">
+                        <h3 class="sectionTitle">Per-video override</h3>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel" for="ItemSearch">Search videos</label>
+                        <input is="emby-input" id="ItemSearch" type="text" />
+                    </div>
+                    <button is="emby-button" type="button" class="raised block" id="SearchItems">
+                        <span>Search</span>
+                    </button>
+                    <div class="selectContainer">
+                        <label class="selectLabel" for="ItemSearchResults">Search results</label>
+                        <select is="emby-select" id="ItemSearchResults"></select>
+                    </div>
+                    <div class="inputContainer">
+                        <label class="inputLabel" for="ItemId">Jellyfin item id</label>
+                        <input is="emby-input" id="ItemId" type="text" />
+                    </div>
+                    <div class="selectContainer">
+                        <label class="selectLabel" for="PresetId">Preset</label>
+                        <select is="emby-select" id="PresetId"></select>
+                    </div>
+                    <button is="emby-button" type="button" class="raised button-submit block" id="SaveItemOverride">
+                        <span>Save item override</span>
+                    </button>
+                    <button is="emby-button" type="button" class="raised block" id="ClearItemOverride">
+                        <span>Clear item override</span>
+                    </button>
+                    <button is="emby-button" type="submit" class="raised button-submit block">
+                        <span>Save plugin settings</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+        <script type="text/javascript">
+            (() => {
+                const page = document.querySelector('#NoirModeConfigPage');
+                const api = (path, options) => ApiClient.ajax(Object.assign({
+                    url: ApiClient.getUrl(path),
+                    type: 'GET',
+                    contentType: 'application/json'
+                }, options));
+
+                page.addEventListener('pageshow', async () => {
+                    const config = await api('NoirMode/config');
+                    document.querySelector('#NoirEnabled').checked = config.enabled;
+                    document.querySelector('#RealFFmpegPath').value = config.realFFmpegPath || '';
+                    document.querySelector('#WrapperPath').value = config.wrapperPath || '';
+                    const presets = await api('NoirMode/presets');
+                    document.querySelector('#PresetId').innerHTML = presets
+                        .map(x => `<option value="${x.id}">${x.label}</option>`)
+                        .join('');
+                });
+
+                document.querySelector('#NoirModeConfigForm').addEventListener('submit', async (event) => {
+                    event.preventDefault();
+                    await api('NoirMode/config', {
+                        type: 'POST',
+                        data: JSON.stringify({
+                            enabled: document.querySelector('#NoirEnabled').checked,
+                            realFFmpegPath: document.querySelector('#RealFFmpegPath').value,
+                            wrapperPath: document.querySelector('#WrapperPath').value,
+                            forceTranscodeNoticeShown: true
+                        })
+                    });
+                    Dashboard.alert('Noir Mode settings saved.');
+                });
+
+                document.querySelector('#SaveItemOverride').addEventListener('click', async () => {
+                    const itemId = document.querySelector('#ItemId').value;
+                    const presetId = document.querySelector('#PresetId').value;
+                    await api(`NoirMode/items/${itemId}/override`, {
+                        type: 'PUT',
+                        data: JSON.stringify({ itemId, mode: 2, presetId })
+                    });
+                    Dashboard.alert('Noir Mode item override saved.');
+                });
+
+                document.querySelector('#SearchItems').addEventListener('click', async () => {
+                    const query = encodeURIComponent(document.querySelector('#ItemSearch').value || '');
+                    const items = await api(`NoirMode/items/search?query=${query}`);
+                    const results = document.querySelector('#ItemSearchResults');
+                    results.innerHTML = items
+                        .map(x => `<option value="${x.itemId}">${x.name}</option>`)
+                        .join('');
+                    if (items.length > 0) {
+                        document.querySelector('#ItemId').value = items[0].itemId;
+                    }
+                });
+
+                document.querySelector('#ItemSearchResults').addEventListener('change', event => {
+                    document.querySelector('#ItemId').value = event.target.value;
+                });
+
+                document.querySelector('#ClearItemOverride').addEventListener('click', async () => {
+                    const itemId = document.querySelector('#ItemId').value;
+                    await api(`NoirMode/items/${itemId}/override`, { type: 'DELETE' });
+                    Dashboard.alert('Noir Mode item override cleared.');
+                });
+            })();
+        </script>
+    </div>
+</body>
+</html>

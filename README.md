@@ -2,7 +2,7 @@
 
 A Jellyfin plugin that adds real-time Noir Mode playback using FFmpeg filters. Watch movies and shows in cinematic black-and-white with optional high contrast, vintage styling, and non-destructive server-side video effects without modifying your original media files.
 
-> Status: Pre-implementation / proof-of-concept planning
+> Status: MVP implementation scaffold
 
 ---
 
@@ -12,7 +12,7 @@ Jellyfin Noir Mode is intended to provide a stylized black-and-white viewing mod
 
 The plugin aims to apply FFmpeg video filters during transcoding, allowing users to experience selected videos in grayscale, high-contrast monochrome, or vintage noir-inspired styles without permanently converting or editing the original media files.
 
-This project is currently in the planning and scaffolding stage.
+This project currently contains a buildable Jellyfin plugin project, FFmpeg wrapper executable, shared core logic, tests, and packaging script.
 
 ---
 
@@ -24,7 +24,7 @@ This project is currently in the planning and scaffolding stage.
 * Keep original media files untouched
 * Support multiple visual presets
 * Provide a simple configuration interface
-* Support per-video Noir Mode preferences
+* Support per-video Noir Mode preferences, disabled by default
 
 ---
 
@@ -32,9 +32,9 @@ This project is currently in the planning and scaffolding stage.
 
 ### Core Features
 
-* Real-time grayscale video conversion
+* Real-time grayscale video conversion during supported transcodes
 * High-contrast black-and-white mode
-* Configurable FFmpeg filter chains
+* Allowlisted FFmpeg filter chains
 * Server-side, non-destructive video processing
 * Per-video Noir Mode disabled by default
 * Plugin configuration page inside Jellyfin
@@ -46,7 +46,7 @@ This project is currently in the planning and scaffolding stage.
 * `High Contrast`
 * `Vintage Cinema`
 * `Old Film Grain`
-* `Custom FFmpeg Filter`
+Custom FFmpeg filters are intentionally disabled for MVP 1.
 
 ### Future Ideas
 
@@ -132,19 +132,17 @@ Example future configuration:
 
 ## Development Status
 
-This project is not yet implemented.
-
 Current phase:
 
 * [x] Project concept
-* [x] README scaffold
-* [ ] Jellyfin plugin structure
-* [ ] Configuration model
-* [ ] Admin settings page
-* [ ] FFmpeg filter integration research
-* [ ] Noir preset system
-* [ ] Playback testing
-* [ ] Release packaging
+* [x] Jellyfin plugin structure
+* [x] Configuration model
+* [x] Admin settings page
+* [x] Native FFmpeg wrapper
+* [x] Noir preset system
+* [x] Unit tests
+* [x] Release packaging script
+* [ ] Live Jellyfin server compatibility validation
 
 ---
 
@@ -158,38 +156,40 @@ Planned requirements:
 * FFmpeg / Jellyfin FFmpeg
 * A Jellyfin server capable of transcoding media
 
-Exact version requirements will be added after implementation begins.
+MVP 1 targets Jellyfin `10.11.0.0` ABI and .NET `net9.0`.
 
 ---
 
 ## Installation
 
-Installation instructions will be added once the plugin is implemented and packaged.
+See [docs/packaging.md](docs/packaging.md).
 
-Planned options:
+Short version:
 
 ```text
-1. Download plugin release
+1. Build with scripts/package.ps1
 2. Copy plugin files to Jellyfin plugin directory
-3. Restart Jellyfin
-4. Enable and configure Noir Mode
+3. Publish/copy the wrapper executable to a stable path
+4. Set Jellyfin's FFmpeg path to the wrapper
+5. Set NOIR_REAL_FFMPEG and NOIR_STATE_FILE for the wrapper process
+6. Restart Jellyfin
+7. Enable Noir Mode and configure per-video overrides
 ```
 
 ---
 
 ## Usage
 
-Usage instructions will be added after the first working version.
-
-Planned usage flow:
+Usage flow:
 
 ```text
 1. Install the plugin
 2. Open Jellyfin Dashboard
 3. Go to Plugins
-4. Configure Noir Mode
-5. Start playback with transcoding enabled
-6. Enjoy black-and-white playback
+4. Configure wrapper paths
+5. Search for a video item
+6. Set a per-video Noir Mode preset override
+7. Start playback with transcoding enabled
 ```
 
 ---
@@ -202,8 +202,9 @@ Expected limitations:
 * May increase CPU or GPU usage
 * Hardware acceleration compatibility needs testing
 * Some Jellyfin clients may not expose a playback toggle
-* Real-time filtering may depend on Jellyfin’s transcoding internals
-* Custom FFmpeg filters may break playback if invalid
+* Real-time filtering depends on Jellyfin invoking FFmpeg for video transcoding
+* Stream copy, complex filter graphs, and unsupported hardware filter chains are passed through unchanged
+* Custom FFmpeg filters are disabled in MVP 1
 
 ---
 
