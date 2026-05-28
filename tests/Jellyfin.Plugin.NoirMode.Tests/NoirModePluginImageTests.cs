@@ -19,13 +19,24 @@ public sealed class NoirModePluginImageTests
     }
 
     [Fact]
+    public void PackageScriptWritesLocalPluginManifestImagePath()
+    {
+        var packageScript = File.ReadAllText(FindRepositoryFilePath("scripts", "package.ps1"));
+
+        Assert.Contains("meta.json", packageScript);
+        Assert.Contains("imagePath = 'plugin.png'", packageScript);
+        Assert.Contains("'Jellyfin.Plugin.NoirMode.dll'", packageScript);
+        Assert.Contains("'Jellyfin.Plugin.NoirMode.Core.dll'", packageScript);
+    }
+
+    [Fact]
     public void PackageScriptPublishesPluginImagePath()
     {
         var packageScript = File.ReadAllText(FindRepositoryFilePath("scripts", "package.ps1"));
 
         Assert.Contains("Images/plugin.png", packageScript);
         Assert.Contains("plugin.png", packageScript);
-        Assert.Contains("imagePath = 'plugin.png'", packageScript);
+        Assert.Contains("imageUrl = $pluginImageUrl", packageScript);
         Assert.Contains("Destination (Join-Path $root $manifestName)", packageScript);
     }
 

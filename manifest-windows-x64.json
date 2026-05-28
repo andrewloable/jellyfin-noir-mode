@@ -1,21 +1,21 @@
 [
-  {
-    "guid": "f1bb7d16-9084-4e42-94fb-ff4e0f17470b",
-    "name": "Noir Mode",
-    "description": "Per-video black-and-white Noir Mode playback using a server-side FFmpeg wrapper.",
-    "overview": "Apply allowlisted noir filters during Jellyfin transcoding for explicitly configured videos.",
-    "owner": "andrewloable",
-    "category": "General",
-    "imagePath": "plugin.png",
-    "versions": [
-      {
-        "version": "0.1.0.0",
-        "changelog": "Initial MVP implementation.",
-        "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/andrewloable/jellyfin-noir-mode/releases/download/v0.1.0/jellyfin-plugin-noir-mode-windows-x64-0.1.0.zip",
-        "checksum": "49377a64f4d59fa88c34c07c77d7e056",
-        "timestamp": "2026-05-28T00:00:00Z"
-      }
-    ]
-  }
+    {
+        "guid":  "f1bb7d16-9084-4e42-94fb-ff4e0f17470b",
+        "name":  "Noir Mode",
+        "description":  "Per-video black-and-white Noir Mode playback using a server-side FFmpeg wrapper.",
+        "overview":  "Apply allowlisted noir filters during Jellyfin transcoding for explicitly configured videos.",
+        "owner":  "andrewloable",
+        "category":  "General",
+        "imageUrl":  "https://raw.githubusercontent.com/andrewloable/jellyfin-noir-mode/main/src/Jellyfin.Plugin.NoirMode/Images/plugin.png",
+        "versions":  [
+                         {
+                             "version":  "0.1.0.0",
+                             "changelog":  "Initial MVP implementation.",
+                             "targetAbi":  "10.11.0.0",
+                             "sourceUrl":  "https://github.com/andrewloable/jellyfin-noir-mode/releases/download/v0.1.0/jellyfin-plugin-noir-mode-windows-x64-0.1.0.zip",
+                             "checksum":  "589f780b0a425f740819cbfe2efba629",
+                             "timestamp":  "2026-05-28T00:00:00Z"
+                         }
+                     ]
+    }
 ]

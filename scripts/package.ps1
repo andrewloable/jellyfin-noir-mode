@@ -7,6 +7,16 @@ $pluginOut = Join-Path $artifacts 'plugin-base'
 $wrapperOut = Join-Path $artifacts 'wrapper'
 $stagingOut = Join-Path $artifacts 'staging'
 
+function Write-Utf8NoBom {
+    param(
+        [string] $Path,
+        [string] $Content
+    )
+
+    $encoding = [System.Text.UTF8Encoding]::new($false)
+    [System.IO.File]::WriteAllText($Path, $Content, $encoding)
+}
+
 Remove-Item -LiteralPath $artifacts -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path $pluginPublishOut | Out-Null
 New-Item -ItemType Directory -Path $pluginOut | Out-Null
@@ -36,7 +46,29 @@ Copy-Item -LiteralPath (Join-Path $root 'src/Jellyfin.Plugin.NoirMode/Images/plu
 Copy-Item -LiteralPath (Join-Path $root 'build.yaml') -Destination $artifacts
 
 $releaseBaseUrl = 'https://github.com/andrewloable/jellyfin-noir-mode/releases/download/v0.1.0'
+$pluginImageUrl = 'https://raw.githubusercontent.com/andrewloable/jellyfin-noir-mode/main/src/Jellyfin.Plugin.NoirMode/Images/plugin.png'
 $packages = @()
+
+$localManifest = [ordered]@{
+    category = 'General'
+    changelog = 'Initial MVP implementation.'
+    description = 'Per-video black-and-white Noir Mode playback using a server-side FFmpeg wrapper.'
+    guid = 'f1bb7d16-9084-4e42-94fb-ff4e0f17470b'
+    name = 'Noir Mode'
+    overview = 'Apply allowlisted noir filters during Jellyfin transcoding for explicitly configured videos.'
+    owner = 'andrewloable'
+    targetAbi = '10.11.0.0'
+    timestamp = '2026-05-28T00:00:00Z'
+    version = '0.1.0.0'
+    status = 0
+    autoUpdate = $true
+    imagePath = 'plugin.png'
+    assemblies = @(
+        'Jellyfin.Plugin.NoirMode.dll',
+        'Jellyfin.Plugin.NoirMode.Core.dll'
+    )
+}
+Write-Utf8NoBom -Path (Join-Path $pluginOut 'meta.json') -Content ((ConvertTo-Json -InputObject $localManifest -Depth 4) + [Environment]::NewLine)
 
 function New-PluginPackage {
     param(
@@ -95,7 +127,7 @@ function New-RepositoryManifest {
             overview = 'Apply allowlisted noir filters during Jellyfin transcoding for explicitly configured videos.'
             owner = 'andrewloable'
             category = 'General'
-            imagePath = 'plugin.png'
+            imageUrl = $pluginImageUrl
             versions = @(
                 [ordered]@{
                     version = '0.1.0.0'
@@ -109,7 +141,7 @@ function New-RepositoryManifest {
         }
     )
 
-    ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content -LiteralPath $Path -Encoding UTF8
+    Write-Utf8NoBom -Path $Path -Content ((ConvertTo-Json -InputObject $manifest -Depth 6) + [Environment]::NewLine)
 }
 
 $packages += [ordered]@{
