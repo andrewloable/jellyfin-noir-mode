@@ -2,18 +2,33 @@ $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
 $artifacts = Join-Path $root 'artifacts'
+$pluginPublishOut = Join-Path $artifacts 'plugin-publish'
 $pluginOut = Join-Path $artifacts 'plugin-base'
 $wrapperOut = Join-Path $artifacts 'wrapper'
 $stagingOut = Join-Path $artifacts 'staging'
 
 Remove-Item -LiteralPath $artifacts -Recurse -Force -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Path $pluginPublishOut | Out-Null
 New-Item -ItemType Directory -Path $pluginOut | Out-Null
 New-Item -ItemType Directory -Path $wrapperOut | Out-Null
 New-Item -ItemType Directory -Path $stagingOut | Out-Null
 
-dotnet publish (Join-Path $root 'src/Jellyfin.Plugin.NoirMode/Jellyfin.Plugin.NoirMode.csproj') -c Release -o $pluginOut
+dotnet publish (Join-Path $root 'src/Jellyfin.Plugin.NoirMode/Jellyfin.Plugin.NoirMode.csproj') -c Release -o $pluginPublishOut
 foreach ($runtime in @('win-x64', 'linux-x64', 'osx-x64', 'osx-arm64')) {
     dotnet publish (Join-Path $root 'src/Jellyfin.Plugin.NoirMode.Wrapper/Jellyfin.Plugin.NoirMode.Wrapper.csproj') -c Release -r $runtime --self-contained false -o (Join-Path $wrapperOut $runtime)
+}
+
+foreach ($fileName in @(
+    'Jellyfin.Plugin.NoirMode.dll',
+    'Jellyfin.Plugin.NoirMode.pdb',
+    'Jellyfin.Plugin.NoirMode.xml',
+    'Jellyfin.Plugin.NoirMode.Core.dll',
+    'Jellyfin.Plugin.NoirMode.Core.pdb'
+)) {
+    $source = Join-Path $pluginPublishOut $fileName
+    if (Test-Path -LiteralPath $source) {
+        Copy-Item -LiteralPath $source -Destination $pluginOut
+    }
 }
 
 Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination $pluginOut
