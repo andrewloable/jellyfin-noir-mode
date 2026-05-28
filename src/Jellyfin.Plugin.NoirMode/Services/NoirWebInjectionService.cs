@@ -75,7 +75,10 @@ public sealed class NoirWebInjectionService : IHostedService
         }
         catch (UnauthorizedAccessException ex)
         {
-            _logger.LogWarning(ex, "Noir Mode web integration could not update {IndexPath}: access denied.", indexPath);
+            _logger.LogWarning(
+                ex,
+                "Noir Mode web integration could not update {IndexPath}: access denied. The Jellyfin Web selector will not appear until the web integration is installed with elevated filesystem permissions. For Docker installs, run scripts/install-web-integration.ps1 or scripts/install-web-integration.sh from the Noir Mode repository against the Jellyfin container.",
+                indexPath);
         }
         catch (IOException ex)
         {

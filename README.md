@@ -86,6 +86,20 @@ After the wrapper is configured, Noir Mode is selected per video. Videos without
 
 The Jellyfin Web selector saves the video's server-side Noir Mode override. Other Jellyfin clients use that saved setting when playback transcodes video, even if they do not show a Noir Mode selector.
 
+For Docker installs, Jellyfin Web's `index.html` may be owned by `root`, while Jellyfin runs as a non-root user. If the selector does not appear and the Jellyfin log says Noir Mode could not update `index.html` because access was denied, run the web integration helper on the Docker host and hard-refresh Jellyfin Web:
+
+```bash
+./scripts/install-web-integration.sh jellyfin
+docker restart jellyfin
+```
+
+From PowerShell:
+
+```powershell
+.\scripts\install-web-integration.ps1 -Container jellyfin
+docker restart jellyfin
+```
+
 ### Plugin Settings
 
 Administrators can also manage per-video overrides from the Noir Mode plugin settings page:
