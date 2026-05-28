@@ -11,5 +11,6 @@ public sealed class PluginServiceRegistrator : IPluginServiceRegistrator
     {
         serviceCollection.AddSingleton<NoirPluginStateService>();
         serviceCollection.AddSingleton<FFmpegWrapperService>();
+        serviceCollection.AddHostedService<NoirWebInjectionService>();
     }
 }

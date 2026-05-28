@@ -76,6 +76,23 @@ public sealed class NoirModeController : ControllerBase
         return Ok(_presetService.GetAll());
     }
 
+    [AllowAnonymous]
+    [HttpGet("web/video-page.js")]
+    public IActionResult GetVideoPageScript()
+    {
+        var resourceName = $"{typeof(Plugin).Namespace}.Configuration.noirVideoPage.js";
+        var assembly = typeof(Plugin).Assembly;
+        using var stream = assembly.GetManifestResourceStream(resourceName);
+        if (stream is null)
+        {
+            _logger.LogWarning("Noir Mode video page script resource was not found: {ResourceName}", resourceName);
+            return NotFound();
+        }
+
+        using var reader = new StreamReader(stream);
+        return Content(reader.ReadToEnd(), "application/javascript");
+    }
+
     [HttpGet("items/search")]
     public ActionResult<IReadOnlyCollection<NoirItemSearchResult>> SearchItems([FromQuery] string? query)
     {

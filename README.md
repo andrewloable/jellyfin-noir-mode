@@ -75,6 +75,8 @@ Noir Mode applies only to videos with a per-video preset override. Videos are di
 
 ## Usage
 
+In Jellyfin Web, Noir Mode presets can be selected from the video details page near the Video, Audio, and Subtitles selectors. Presets can also be selected from the plugin settings page:
+
 1. Open the Noir Mode plugin settings.
 2. Search for a video.
 3. Select a Noir Mode preset for that video.
@@ -96,6 +98,7 @@ No media files are modified by Noir Mode.
 * Real-time filtering can increase CPU or GPU usage.
 * Stream copy, complex filter graphs, and unsupported hardware filter chains are passed through unchanged.
 * Custom FFmpeg filters are not supported.
+* The Jellyfin Web video-page dropdown is available only in Jellyfin Web clients that load the server-hosted web UI.
 
 ## Troubleshooting
 
