@@ -23,6 +23,16 @@
                         <label class="inputLabel" for="WrapperPath">Wrapper path configured in Jellyfin</label>
                         <input is="emby-input" id="WrapperPath" type="text" />
                     </div>
+                    <div class="fieldDescription" id="WrapperStatus"></div>
+                    <button is="emby-button" type="button" class="raised button-submit block" id="ConfigureWrapper">
+                        <span>Use bundled wrapper</span>
+                    </button>
+                    <button is="emby-button" type="button" class="raised block" id="RollbackWrapper">
+                        <span>Restore real FFmpeg</span>
+                    </button>
+                    <button is="emby-button" type="button" class="raised block" id="TestWrapper">
+                        <span>Test wrapper</span>
+                    </button>
                     <div class="sectionTitleContainer">
                         <h3 class="sectionTitle">Per-video override</h3>
                     </div>
@@ -66,11 +76,25 @@
                     contentType: 'application/json'
                 }, options));
 
+                const loadStatus = async () => {
+                    const status = await api('NoirMode/wrapper/status');
+                    document.querySelector('#RealFFmpegPath').value = status.realFFmpegPath || '';
+                    document.querySelector('#WrapperPath').value = status.wrapperPath || '';
+                    document.querySelector('#WrapperStatus').innerHTML = [
+                        `Current Jellyfin FFmpeg: ${status.currentJellyfinFFmpegPath || '<unset>'}`,
+                        `Wrapper configured: ${status.jellyfinUsesWrapper ? 'yes' : 'no'}`,
+                        `Wrapper config: ${status.wrapperConfigExists ? 'present' : 'missing'}`,
+                        status.message || ''
+                    ].filter(Boolean).join('<br />');
+                    return status;
+                };
+
                 page.addEventListener('pageshow', async () => {
                     const config = await api('NoirMode/config');
                     document.querySelector('#NoirEnabled').checked = config.enabled;
                     document.querySelector('#RealFFmpegPath').value = config.realFFmpegPath || '';
                     document.querySelector('#WrapperPath').value = config.wrapperPath || '';
+                    await loadStatus();
                     const presets = await api('NoirMode/presets');
                     document.querySelector('#PresetId').innerHTML = presets
                         .map(x => `<option value="${x.id}">${x.label}</option>`)
@@ -89,6 +113,23 @@
                         })
                     });
                     Dashboard.alert('Noir Mode settings saved.');
+                });
+
+                document.querySelector('#ConfigureWrapper').addEventListener('click', async () => {
+                    const status = await api('NoirMode/wrapper/install', { type: 'POST' });
+                    await loadStatus();
+                    Dashboard.alert(status.message || 'Bundled wrapper configured.');
+                });
+
+                document.querySelector('#RollbackWrapper').addEventListener('click', async () => {
+                    const status = await api('NoirMode/wrapper/rollback', { type: 'POST' });
+                    await loadStatus();
+                    Dashboard.alert(status.message || 'FFmpeg path restored.');
+                });
+
+                document.querySelector('#TestWrapper').addEventListener('click', async () => {
+                    const result = await api('NoirMode/wrapper/test', { type: 'POST' });
+                    Dashboard.alert(result.output || (result.success ? 'Wrapper test passed.' : 'Wrapper test failed.'));
                 });
 
                 document.querySelector('#SaveItemOverride').addEventListener('click', async () => {

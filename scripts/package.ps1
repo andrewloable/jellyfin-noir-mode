@@ -19,7 +19,8 @@ foreach ($runtime in @('win-x64', 'linux-x64', 'osx-x64', 'osx-arm64')) {
 Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination $pluginOut
 Copy-Item -LiteralPath (Join-Path $root 'build.yaml') -Destination $artifacts
 
-$pluginZips = @()
+$releaseBaseUrl = 'https://github.com/andrewloable/jellyfin-noir-mode/releases/download/v0.1.0'
+$packages = @()
 
 function New-PluginPackage {
     param(
@@ -42,25 +43,79 @@ function New-PluginPackage {
     return $zipPath
 }
 
-$pluginZips += New-PluginPackage -Name 'jellyfin-plugin-noir-mode-windows-x64-0.1.0' -RuntimeIds @('win-x64')
-$pluginZips += New-PluginPackage -Name 'jellyfin-plugin-noir-mode-linux-x64-0.1.0' -RuntimeIds @('linux-x64')
-$pluginZips += New-PluginPackage -Name 'jellyfin-plugin-noir-mode-macos-0.1.0' -RuntimeIds @('osx-x64', 'osx-arm64')
+function Get-FileHashHex {
+    param(
+        [string] $Path,
+        [System.Security.Cryptography.HashAlgorithm] $Algorithm
+    )
 
-$checksumPath = Join-Path $artifacts 'checksums.txt'
-Remove-Item -LiteralPath $checksumPath -Force -ErrorAction SilentlyContinue
-foreach ($asset in $pluginZips) {
-    $sha256 = [System.Security.Cryptography.SHA256]::Create()
-    $stream = [System.IO.File]::OpenRead($asset)
+    $stream = [System.IO.File]::OpenRead($Path)
     try {
-        $hashBytes = $sha256.ComputeHash($stream)
+        $hashBytes = $Algorithm.ComputeHash($stream)
     }
     finally {
         $stream.Dispose()
-        $sha256.Dispose()
+        $Algorithm.Dispose()
     }
 
-    $hash = [System.BitConverter]::ToString($hashBytes).Replace('-', '').ToLowerInvariant()
-    Add-Content -LiteralPath $checksumPath -Value "$hash  $(Split-Path -Leaf $asset)"
+    return [System.BitConverter]::ToString($hashBytes).Replace('-', '').ToLowerInvariant()
 }
+
+function New-RepositoryManifest {
+    param(
+        [string] $Path,
+        [string] $SourceUrl,
+        [string] $Checksum
+    )
+
+    $manifest = @(
+        [ordered]@{
+            guid = 'f1bb7d16-9084-4e42-94fb-ff4e0f17470b'
+            name = 'Noir Mode'
+            description = 'Per-video black-and-white Noir Mode playback using a server-side FFmpeg wrapper.'
+            overview = 'Apply allowlisted noir filters during Jellyfin transcoding for explicitly configured videos.'
+            owner = 'andrewloable'
+            category = 'General'
+            versions = @(
+                [ordered]@{
+                    version = '0.1.0.0'
+                    changelog = 'Initial MVP implementation.'
+                    targetAbi = '10.11.0.0'
+                    sourceUrl = $SourceUrl
+                    checksum = $Checksum
+                    timestamp = '2026-05-28T00:00:00Z'
+                }
+            )
+        }
+    )
+
+    ConvertTo-Json -InputObject $manifest -Depth 6 | Set-Content -LiteralPath $Path -Encoding UTF8
+}
+
+$packages += [ordered]@{
+    ZipPath = New-PluginPackage -Name 'jellyfin-plugin-noir-mode-windows-x64-0.1.0' -RuntimeIds @('win-x64')
+    Manifest = 'manifest-windows-x64.json'
+}
+$packages += [ordered]@{
+    ZipPath = New-PluginPackage -Name 'jellyfin-plugin-noir-mode-linux-x64-0.1.0' -RuntimeIds @('linux-x64')
+    Manifest = 'manifest-linux-x64.json'
+}
+$packages += [ordered]@{
+    ZipPath = New-PluginPackage -Name 'jellyfin-plugin-noir-mode-macos-0.1.0' -RuntimeIds @('osx-x64', 'osx-arm64')
+    Manifest = 'manifest-macos.json'
+}
+
+$checksumPath = Join-Path $artifacts 'checksums.txt'
+Remove-Item -LiteralPath $checksumPath -Force -ErrorAction SilentlyContinue
+foreach ($package in $packages) {
+    $asset = $package.ZipPath
+    $assetName = Split-Path -Leaf $asset
+    $sha256 = Get-FileHashHex -Path $asset -Algorithm ([System.Security.Cryptography.SHA256]::Create())
+    $md5 = Get-FileHashHex -Path $asset -Algorithm ([System.Security.Cryptography.MD5]::Create())
+
+    Add-Content -LiteralPath $checksumPath -Value "$sha256  $assetName"
+    New-RepositoryManifest -Path (Join-Path $artifacts $package.Manifest) -SourceUrl "$releaseBaseUrl/$assetName" -Checksum $md5
+}
+Copy-Item -LiteralPath (Join-Path $artifacts 'manifest-linux-x64.json') -Destination (Join-Path $artifacts 'manifest.json')
 
 Write-Host "Artifacts written to $artifacts"

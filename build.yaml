@@ -9,7 +9,7 @@ description: >
   Applies allowlisted noir FFmpeg filters during Jellyfin video transcoding for videos
   with explicit per-item overrides. Videos are disabled by default.
 category: "General"
-owner: "loabletech"
+owner: "andrewloable"
 artifacts:
 - "Jellyfin.Plugin.NoirMode.dll"
 - "Jellyfin.Plugin.NoirMode.Core.dll"

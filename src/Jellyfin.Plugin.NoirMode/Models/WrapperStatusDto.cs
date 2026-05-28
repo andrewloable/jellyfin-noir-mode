@@ -4,13 +4,21 @@ public sealed class WrapperStatusDto
 {
     public bool Enabled { get; set; }
 
+    public string? CurrentJellyfinFFmpegPath { get; set; }
+
     public string? RealFFmpegPath { get; set; }
 
     public string? WrapperPath { get; set; }
 
+    public bool JellyfinUsesWrapper { get; set; }
+
     public bool RealFFmpegExists { get; set; }
 
     public bool WrapperExists { get; set; }
+
+    public string? WrapperConfigPath { get; set; }
+
+    public bool WrapperConfigExists { get; set; }
 
     public string StateFilePath { get; set; } = string.Empty;
 
@@ -18,5 +26,5 @@ public sealed class WrapperStatusDto
 
     public DateTimeOffset? StateFileModifiedAt { get; set; }
 
-    public string[] RequiredEnvironment { get; set; } = [];
+    public string? Message { get; set; }
 }

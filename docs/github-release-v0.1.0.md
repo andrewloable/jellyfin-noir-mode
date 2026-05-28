@@ -30,6 +30,9 @@ Initial MVP release of Jellyfin Noir Mode. This release provides OS-specific Jel
 - `jellyfin-plugin-noir-mode-windows-x64-0.1.0.zip`
 - `jellyfin-plugin-noir-mode-linux-x64-0.1.0.zip`
 - `jellyfin-plugin-noir-mode-macos-0.1.0.zip`
+- `manifest-windows-x64.json`
+- `manifest-linux-x64.json`
+- `manifest-macos.json`
 - `checksums.txt`
 
 ## Known Limitations

@@ -14,7 +14,13 @@ Each plugin ZIP includes the same plugin files plus only the wrapper binaries fo
 
 The macOS package contains both Intel and Apple Silicon wrapper builds.
 
-Jellyfin plugin repository manifests have one `sourceUrl` per version and cannot choose an artifact by server OS. The release manifest points at the Linux x64 package as the default catalog artifact; Windows and macOS installs should use the matching GitHub release ZIP manually.
+Jellyfin plugin repository manifests have one `sourceUrl` per version and cannot choose an artifact by server OS. This project publishes separate repository manifests so users can add the URL for their server OS:
+
+- `manifest-windows-x64.json`
+- `manifest-linux-x64.json`
+- `manifest-macos.json`
+
+The root `manifest.json` is an alias for the Linux x64 manifest for Docker/Linux users.
 
 ## Build
 
@@ -23,9 +29,11 @@ dotnet test Jellyfin.Plugin.NoirMode.slnx
 pwsh ./scripts/package.ps1
 ```
 
+The packaging script writes the OS-specific plugin ZIPs, `checksums.txt`, and generated repository manifests to `artifacts/`.
+
 ## Install
 
-1. Extract the plugin ZIP for the Jellyfin server OS to Jellyfin's plugin directory.
+1. Add the repository manifest URL for the Jellyfin server OS, or extract the matching plugin ZIP manually.
 2. Restart Jellyfin.
 3. Open the Noir Mode plugin settings.
 4. Set the real FFmpeg path.

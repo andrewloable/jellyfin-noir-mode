@@ -255,12 +255,14 @@ Clients without noir-specific UI should use the per-video setting saved on the s
 
 For noir mode to apply, playback must transcode video. Direct Play and Direct Stream will not run FFmpeg video filters. The plugin should provide admin guidance for forcing transcoding where needed, but the MVP should not claim it can force every client to transcode until that capability has been proven.
 
-### Optional Jellyfin Web Player Toggle
+### Optional Jellyfin Web Video Page Selector
 
 Add a Jellyfin Web enhancement only after the server-side flow is working:
 
-- Add a noir toggle button to the video player.
-- Add a preset selector.
+- Add a `Noir Mode` row/dropdown on video item pages near the existing Video, Audio, and Subtitles selectors.
+- Show the selector only for video files/items.
+- Style and position the selector like Jellyfin Web's existing stream selectors, but do not represent Noir Mode as a subtitle track.
+- Include `Off` plus the built-in Noir Mode presets.
 - Write the selected mode through the plugin API.
 - Save or clear the current video's item override through the plugin API.
 

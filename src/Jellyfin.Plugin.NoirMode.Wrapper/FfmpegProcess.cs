@@ -8,7 +8,7 @@ public static class FfmpegProcess
     {
         if (!File.Exists(realFfmpegPath))
         {
-            Console.Error.WriteLine($"Noir Mode wrapper error: real FFmpeg not found at '{realFfmpegPath}'.");
+            Console.Error.WriteLine($"NoirModeWrapper event=real-ffmpeg-missing realFfmpegPath=\"{realFfmpegPath}\"");
             return 127;
         }
 
@@ -24,10 +24,11 @@ public static class FfmpegProcess
             startInfo.ArgumentList.Add(arg);
         }
 
+        Console.Error.WriteLine($"NoirModeWrapper event=real-ffmpeg-start realFfmpegPath=\"{realFfmpegPath}\" argumentCount={args.Count}");
         using var process = Process.Start(startInfo);
         if (process is null)
         {
-            Console.Error.WriteLine("Noir Mode wrapper error: failed to start real FFmpeg.");
+            Console.Error.WriteLine("NoirModeWrapper event=real-ffmpeg-start-failed");
             return 127;
         }
 
