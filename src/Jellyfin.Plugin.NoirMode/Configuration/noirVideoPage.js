@@ -107,15 +107,32 @@
         style.id = styleId;
         style.textContent = `
             #${containerId} {
-                margin-top: 1em;
-                max-width: 32em;
+                display: grid;
+                grid-template-columns: 6em minmax(12em, 32em);
+                align-items: center;
+                column-gap: 2em;
+                margin: .35em 0;
+                max-width: 48em;
             }
 
-            #${containerId}.noirModeInlineSelection {
-                margin-top: 0;
+            #${containerId} .selectLabel {
+                margin: 0;
+            }
+
+            #${containerId} .noirModeNativeSelect {
+                appearance: auto;
+                -webkit-appearance: menulist;
+                background: #2b2b2b;
+                border: 1px solid rgba(255, 255, 255, .15);
+                border-radius: 3px;
+                color: inherit;
+                min-height: 2.25em;
+                padding: .35em .6em;
+                width: 100%;
             }
 
             #${containerId} .noirModeStatus {
+                grid-column: 2;
                 min-height: 1.25em;
             }
         `;
@@ -133,7 +150,7 @@
     const createContainer = () => {
         const container = document.createElement('div');
         container.id = containerId;
-        container.className = 'selectContainer noirModeSelectionContainer';
+        container.className = 'noirModeSelectionContainer';
 
         const label = document.createElement('label');
         label.className = 'selectLabel';
@@ -142,7 +159,7 @@
 
         const select = document.createElement('select');
         select.id = selectId;
-        select.className = 'emby-select-withcolor emby-select';
+        select.className = 'noirModeNativeSelect';
 
         const status = document.createElement('div');
         status.className = 'fieldDescription noirModeStatus';
@@ -161,12 +178,10 @@
         }
 
         if (anchor && !anchor.classList.contains('trackSelections')) {
-            container.classList.add('noirModeInlineSelection');
             anchor.insertAdjacentElement('afterend', container);
             return container;
         }
 
-        container.classList.remove('noirModeInlineSelection');
         if (anchor) {
             anchor.insertAdjacentElement('afterend', container);
             return container;
@@ -232,6 +247,10 @@
         }
     };
 
+    const stopSelectEvent = event => {
+        event.stopPropagation();
+    };
+
     const removeContainer = () => {
         const container = document.getElementById(containerId);
         if (container) {
@@ -275,6 +294,10 @@
 
             setOptions(select, presets, override);
             status.textContent = '';
+            select.onpointerdown = stopSelectEvent;
+            select.onmousedown = stopSelectEvent;
+            select.ontouchstart = stopSelectEvent;
+            select.onclick = stopSelectEvent;
 
             if (lastItemId !== itemId) {
                 select.onchange = () => saveSelection(itemId, select, status);

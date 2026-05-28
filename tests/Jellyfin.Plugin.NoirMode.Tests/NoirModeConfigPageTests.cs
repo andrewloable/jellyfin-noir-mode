@@ -27,6 +27,10 @@ public sealed class NoirModeConfigPageTests
         Assert.Contains("const findInsertionAnchor = page =>", script);
         Assert.Contains("const findModernMediaAnchor = page =>", script);
         Assert.Contains("const presetItems = asArray(presets)", script);
+        Assert.Contains("className = 'noirModeNativeSelect'", script);
+        Assert.Contains("event.stopPropagation()", script);
+        Assert.Contains("select.onmousedown = stopSelectEvent", script);
+        Assert.Contains("select.ontouchstart = stopSelectEvent", script);
         Assert.Contains("read(override, 'mode', 0)", script);
         Assert.Contains("read(preset, 'id', '')", script);
         Assert.Contains("routeMatch[1].replaceAll('-', '')", script);
