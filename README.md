@@ -107,6 +107,14 @@ From PowerShell:
 docker restart jellyfin
 ```
 
+### Jellyfin Media Player
+
+Jellyfin Media Player shows the video-page **Noir Mode** selector only when it loads the server-provided Jellyfin Web client. If it uses its bundled or external repo web client, it will not load the server `index.html` patch that injects `NoirMode/web/video-page.js`.
+
+To use the selector in Jellyfin Media Player, open its client settings, enable the server-provided web client option (`ForceExternalWebclient` in the client configuration), then reconnect to the server. If the selector still does not appear, set the video's override from the Noir Mode plugin settings page instead.
+
+Playback from Jellyfin Media Player still has to transcode video for Noir Mode to affect the picture. Jellyfin Media Player can direct play many files through MPV, which bypasses the server FFmpeg wrapper.
+
 ### Plugin Settings
 
 Administrators can also manage per-video overrides from the Noir Mode plugin settings page:
