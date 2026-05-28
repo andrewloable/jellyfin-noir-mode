@@ -6,6 +6,7 @@
     let presetsPromise;
     let lastItemId;
     let renderTimer;
+    let renderVersion = 0;
 
     const api = (path, options) => ApiClient.ajax(Object.assign({
         url: ApiClient.getUrl(path),
@@ -70,7 +71,10 @@
     };
 
     const getPresets = () => {
-        presetsPromise = presetsPromise || api('NoirMode/presets');
+        presetsPromise = presetsPromise || api('NoirMode/presets').catch(error => {
+            presetsPromise = undefined;
+            throw error;
+        });
         return presetsPromise;
     };
 
@@ -185,6 +189,7 @@
     };
 
     const render = async () => {
+        const version = ++renderVersion;
         const itemId = getRouteItemId();
         if (!itemId || !window.ApiClient) {
             removeContainer();
@@ -199,19 +204,27 @@
 
         try {
             const item = await ApiClient.getItem(ApiClient.getCurrentUserId(), itemId);
+            if (version !== renderVersion) {
+                return;
+            }
+
             if (!isVideoItem(item)) {
                 removeContainer();
                 lastItemId = undefined;
                 return;
             }
 
-            const container = ensureContainer(page);
-            const select = container.querySelector('select');
-            const status = container.querySelector('.noirModeStatus');
             const [presets, override] = await Promise.all([
                 getPresets(),
                 api(`NoirMode/items/${encodeURIComponent(itemId)}/override`)
             ]);
+            if (version !== renderVersion) {
+                return;
+            }
+
+            const container = ensureContainer(page);
+            const select = container.querySelector('select');
+            const status = container.querySelector('.noirModeStatus');
 
             setOptions(select, presets, override);
             status.textContent = '';
@@ -222,8 +235,10 @@
             }
         } catch (error) {
             console.debug('Noir Mode video page selection skipped', error);
-            removeContainer();
-            lastItemId = undefined;
+            if (!lastItemId || lastItemId !== itemId) {
+                removeContainer();
+                lastItemId = undefined;
+            }
         }
     };
 

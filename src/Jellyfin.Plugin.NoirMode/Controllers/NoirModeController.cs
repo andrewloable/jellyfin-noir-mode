@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 namespace Jellyfin.Plugin.NoirMode.Controllers;
 
 [ApiController]
-[Authorize(Policy = Policies.RequiresElevation)]
+[Authorize]
 [Route("NoirMode")]
 public sealed class NoirModeController : ControllerBase
 {
@@ -36,6 +36,7 @@ public sealed class NoirModeController : ControllerBase
         _wrapperService = wrapperService;
     }
 
+    [Authorize(Policy = Policies.RequiresElevation)]
     [HttpGet("config")]
     public ActionResult<NoirConfigDto> GetConfig()
     {
@@ -51,6 +52,7 @@ public sealed class NoirModeController : ControllerBase
         };
     }
 
+    [Authorize(Policy = Policies.RequiresElevation)]
     [HttpPost("config")]
     public ActionResult<NoirConfigDto> SaveConfig(NoirConfigDto request)
     {
@@ -94,6 +96,7 @@ public sealed class NoirModeController : ControllerBase
         return Content(reader.ReadToEnd(), "application/javascript");
     }
 
+    [Authorize(Policy = Policies.RequiresElevation)]
     [HttpGet("items/search")]
     public ActionResult<IReadOnlyCollection<NoirItemSearchResult>> SearchItems([FromQuery] string? query)
     {
@@ -184,6 +187,7 @@ public sealed class NoirModeController : ControllerBase
         return saved;
     }
 
+    [Authorize(Policy = Policies.RequiresElevation)]
     [HttpDelete("items/{itemId}/override")]
     public IActionResult DeleteOverride(string itemId)
     {
@@ -195,6 +199,7 @@ public sealed class NoirModeController : ControllerBase
         return NoContent();
     }
 
+    [Authorize(Policy = Policies.RequiresElevation)]
     [HttpGet("wrapper/status")]
     public ActionResult<WrapperStatusDto> GetWrapperStatus()
     {
@@ -202,6 +207,7 @@ public sealed class NoirModeController : ControllerBase
         return _wrapperService.GetStatus(config.Enabled, config.RealFFmpegPath, config.WrapperPath);
     }
 
+    [Authorize(Policy = Policies.RequiresElevation)]
     [HttpPost("wrapper/install")]
     public ActionResult<WrapperStatusDto> ConfigureWrapper()
     {
@@ -220,6 +226,7 @@ public sealed class NoirModeController : ControllerBase
         return status;
     }
 
+    [Authorize(Policy = Policies.RequiresElevation)]
     [HttpPost("wrapper/rollback")]
     public ActionResult<WrapperStatusDto> RollbackWrapper()
     {
@@ -236,6 +243,7 @@ public sealed class NoirModeController : ControllerBase
         return status;
     }
 
+    [Authorize(Policy = Policies.RequiresElevation)]
     [HttpPost("wrapper/export-state")]
     public ActionResult<WrapperStatusDto> ExportState()
     {
@@ -248,6 +256,7 @@ public sealed class NoirModeController : ControllerBase
         return _wrapperService.GetStatus(config.Enabled, config.RealFFmpegPath, config.WrapperPath);
     }
 
+    [Authorize(Policy = Policies.RequiresElevation)]
     [HttpPost("wrapper/test")]
     public async Task<ActionResult<object>> TestWrapper(CancellationToken cancellationToken)
     {
@@ -257,6 +266,7 @@ public sealed class NoirModeController : ControllerBase
         return Ok(new { result.Success, result.Output });
     }
 
+    [Authorize(Policy = Policies.RequiresElevation)]
     [HttpGet("resolve")]
     public ActionResult<NoirResolveResult> Resolve([FromQuery] string? itemId, [FromQuery] string? mediaPath)
     {
