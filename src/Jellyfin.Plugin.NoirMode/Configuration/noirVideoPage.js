@@ -10,6 +10,7 @@
     const api = (path, options) => ApiClient.ajax(Object.assign({
         url: ApiClient.getUrl(path),
         type: 'GET',
+        dataType: 'json',
         contentType: 'application/json'
     }, options));
 
@@ -28,6 +29,24 @@
         }
 
         return fallback;
+    };
+
+    const asArray = value => {
+        if (Array.isArray(value)) {
+            return value;
+        }
+
+        if (typeof value === 'string' && value) {
+            try {
+                const parsed = JSON.parse(value);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (error) {
+                console.debug('Noir Mode response was not a JSON array', error);
+                return [];
+            }
+        }
+
+        return [];
     };
 
     const getRouteItemId = () => {
@@ -162,7 +181,8 @@
         const selectedPreset = read(override, 'presetId', '');
         const selectedValue = read(override, 'mode', 0) === 2 && selectedPreset ? selectedPreset : 'off';
         const currentValues = Array.from(select.options).map(option => `${option.value}:${option.textContent}`).join('|');
-        const nextValues = [`off:Off`, ...presets.map(preset => `${read(preset, 'id', '')}:${read(preset, 'label', '')}`)].join('|');
+        const presetItems = asArray(presets);
+        const nextValues = [`off:Off`, ...presetItems.map(preset => `${read(preset, 'id', '')}:${read(preset, 'label', '')}`)].join('|');
 
         if (currentValues === nextValues) {
             select.value = selectedValue;
@@ -176,7 +196,7 @@
         off.textContent = 'Off';
         select.appendChild(off);
 
-        for (const preset of presets) {
+        for (const preset of presetItems) {
             const option = document.createElement('option');
             option.value = read(preset, 'id', '');
             option.textContent = read(preset, 'label', '');

@@ -22,8 +22,11 @@ public sealed class NoirModeConfigPageTests
         var script = File.ReadAllText(FindConfigurationFilePath("noirVideoPage.js"));
 
         Assert.Contains("const read = (value, camelName, fallback)", script);
+        Assert.Contains("dataType: 'json'", script);
+        Assert.Contains("const asArray = value =>", script);
         Assert.Contains("const findInsertionAnchor = page =>", script);
         Assert.Contains("const findModernMediaAnchor = page =>", script);
+        Assert.Contains("const presetItems = asArray(presets)", script);
         Assert.Contains("read(override, 'mode', 0)", script);
         Assert.Contains("read(preset, 'id', '')", script);
         Assert.Contains("routeMatch[1].replaceAll('-', '')", script);
