@@ -27,7 +27,10 @@ public sealed class NoirModeConfigPageTests
         Assert.Contains("const findInsertionAnchor = page =>", script);
         Assert.Contains("const findModernMediaAnchor = page =>", script);
         Assert.Contains("const presetItems = asArray(presets)", script);
-        Assert.Contains("className = 'noirModeNativeSelect'", script);
+        Assert.Contains("className = 'emby-select-withcolor emby-select noirModeNativeSelect'", script);
+        Assert.Contains("grid-template-columns: 6em minmax(12em, 37.5em)", script);
+        Assert.Contains("column-gap: 0", script);
+        Assert.Contains("max-width: 43.5em", script);
         Assert.Contains("event.stopPropagation()", script);
         Assert.Contains("select.onmousedown = stopSelectEvent", script);
         Assert.Contains("select.ontouchstart = stopSelectEvent", script);

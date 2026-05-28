@@ -117,26 +117,24 @@
         style.textContent = `
             #${containerId} {
                 display: grid;
-                grid-template-columns: 6em minmax(12em, 32em);
+                grid-template-columns: 6em minmax(12em, 37.5em);
                 align-items: center;
-                column-gap: 2em;
-                margin: .35em 0;
-                max-width: 48em;
+                column-gap: 0;
+                margin: .25em 0;
+                max-width: 43.5em;
             }
 
             #${containerId} .selectLabel {
                 margin: 0;
+                align-self: center;
+                line-height: 2em;
             }
 
             #${containerId} .noirModeNativeSelect {
-                appearance: auto;
-                -webkit-appearance: menulist;
-                background: #2b2b2b;
-                border: 1px solid rgba(255, 255, 255, .15);
-                border-radius: 3px;
-                color: inherit;
-                min-height: 2.25em;
-                padding: .35em .6em;
+                box-sizing: border-box;
+                margin: 0;
+                max-width: none;
+                min-height: 2em;
                 width: 100%;
             }
 
@@ -168,7 +166,7 @@
 
         const select = document.createElement('select');
         select.id = selectId;
-        select.className = 'noirModeNativeSelect';
+        select.className = 'emby-select-withcolor emby-select noirModeNativeSelect';
 
         const status = document.createElement('div');
         status.className = 'fieldDescription noirModeStatus';
