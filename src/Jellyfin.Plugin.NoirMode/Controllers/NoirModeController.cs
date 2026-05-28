@@ -119,6 +119,17 @@ public sealed class NoirModeController : ControllerBase
     [HttpGet("items/{itemId}/override")]
     public ActionResult<NoirItemOverride> GetOverride(string itemId)
     {
+        var item = TryGetItem(itemId);
+        if (item is null)
+        {
+            return NotFound($"Item '{itemId}' was not found.");
+        }
+
+        if (!IsVideoItem(item))
+        {
+            return BadRequest("Noir Mode is configured per episode/video, not at the series level.");
+        }
+
         var config = GetConfiguration();
         return config.ItemOverrides.FirstOrDefault(x => x.ItemId.Equals(itemId, StringComparison.OrdinalIgnoreCase))
             ?? new NoirItemOverride { ItemId = itemId, Mode = NoirOverrideMode.Disabled };
@@ -156,7 +167,7 @@ public sealed class NoirModeController : ControllerBase
                 itemId,
                 item.Name,
                 item.MediaType);
-            return BadRequest("Noir Mode can only be configured for video files.");
+            return BadRequest("Noir Mode is configured per episode/video, not at the series level.");
         }
 
         var mediaPath = request.MediaPath ?? item?.Path;
