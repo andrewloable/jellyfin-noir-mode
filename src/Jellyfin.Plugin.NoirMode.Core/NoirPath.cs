@@ -13,11 +13,20 @@ public static class NoirPath
         }
 
         var value = path.Trim().Trim('"');
-        if (value.StartsWith("file:", StringComparison.OrdinalIgnoreCase)
-            && Uri.TryCreate(value, UriKind.Absolute, out var uri)
-            && uri.IsFile)
+        if (value.StartsWith("file:", StringComparison.OrdinalIgnoreCase))
         {
-            value = uri.LocalPath;
+            if (Uri.TryCreate(value, UriKind.Absolute, out var uri) && uri.IsFile)
+            {
+                value = uri.LocalPath;
+            }
+            else
+            {
+                value = value["file:".Length..].Trim().Trim('"');
+                if (value.StartsWith("///", StringComparison.Ordinal))
+                {
+                    value = $"/{value.TrimStart('/')}";
+                }
+            }
         }
 
         value = value.Replace('\\', '/');

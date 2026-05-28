@@ -64,20 +64,33 @@ public static class FfmpegArgumentParser
     {
         var hardwareTokens = new[]
         {
-            "vaapi",
-            "qsv",
-            "cuda",
-            "videotoolbox",
-            "opencl",
-            "vulkan",
             "hwupload",
             "hwdownload",
             "scale_vaapi",
             "scale_qsv",
-            "scale_cuda"
+            "scale_cuda",
+            "scale_vt",
+            "scale_vulkan",
+            "tonemap_vaapi",
+            "tonemap_opencl"
         };
 
-        return args.Any(arg => hardwareTokens.Any(token => arg.Contains(token, StringComparison.OrdinalIgnoreCase)));
+        for (var i = 0; i < args.Count - 1; i++)
+        {
+            if (args[i].Equals("-vf", StringComparison.OrdinalIgnoreCase)
+                || args[i].Equals("-filter:v", StringComparison.OrdinalIgnoreCase)
+                || args[i].Equals("-filter:v:0", StringComparison.OrdinalIgnoreCase)
+                || args[i].Equals("-filter_complex", StringComparison.OrdinalIgnoreCase))
+            {
+                var filter = args[i + 1];
+                if (hardwareTokens.Any(token => filter.Contains(token, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public static int FindOutputInsertionIndex(IReadOnlyList<string> args)

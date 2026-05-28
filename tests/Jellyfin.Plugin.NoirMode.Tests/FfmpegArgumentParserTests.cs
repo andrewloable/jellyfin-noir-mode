@@ -22,7 +22,7 @@ public sealed class FfmpegArgumentParserTests
     [Fact]
     public void DetectsHardwareFilterChains()
     {
-        Assert.True(FfmpegArgumentParser.UsesLikelyHardwareFilterChain(["-hwaccel", "vaapi", "-i", "in.mkv", "out.m3u8"]));
+        Assert.False(FfmpegArgumentParser.UsesLikelyHardwareFilterChain(["-init_hw_device", "cuda=cu:0", "-i", "in.mkv", "-vf", "scale=1280:-2"]));
         Assert.True(FfmpegArgumentParser.UsesLikelyHardwareFilterChain(["-vf", "scale_qsv=w=1280:h=720"]));
     }
 }

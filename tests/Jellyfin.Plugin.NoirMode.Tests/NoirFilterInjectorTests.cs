@@ -69,13 +69,46 @@ public sealed class NoirFilterInjectorTests
         var injector = new NoirFilterInjector();
         var state = StateForPath("movie.mkv");
 
-        var decision = injector.Inject(["-hwaccel", "vaapi", "-i", "movie.mkv", "out.m3u8"], state);
+        var decision = injector.Inject(["-i", "movie.mkv", "-vf", "scale_cuda=1280:-2", "out.m3u8"], state);
 
         Assert.False(decision.Modified);
         Assert.Equal("hardware-filter-chain-unsupported", decision.Reason);
     }
 
-    private static NoirState StateForPath(string path)
+    [Fact]
+    public void AppendsJellyfinCudaDeviceCommandWithSoftwareVideoFilter()
+    {
+        var injector = new NoirFilterInjector();
+        var state = StateForPath("/movies/the.legend.of.aang.the.last.airbender.mp4", "film-noir");
+
+        var decision = injector.Inject(
+            [
+                "-analyzeduration",
+                "200M",
+                "-probesize",
+                "1G",
+                "-init_hw_device",
+                "cuda=cu:0",
+                "-filter_hw_device",
+                "cu",
+                "-i",
+                "file:/movies/the.legend.of.aang.the.last.airbender.mp4",
+                "-codec:v:0",
+                "h264_nvenc",
+                "-vf",
+                "setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709,scale=trunc(min(max(iw\\,ih*a)\\,960)/2)*2:trunc(ow/a/2)*2,format=yuv420p",
+                "-f",
+                "hls",
+                "out.m3u8"
+            ],
+            state);
+
+        Assert.True(decision.Applied);
+        Assert.Equal("appended-vf", decision.Reason);
+        Assert.Contains(decision.Arguments, arg => arg.Contains("hue=s=0,eq=contrast=1.35:brightness=-0.03", StringComparison.Ordinal));
+    }
+
+    private static NoirState StateForPath(string path, string presetId = "classic-bw")
     {
         return new NoirState
         {
@@ -87,7 +120,7 @@ public sealed class NoirFilterInjectorTests
                     ItemId = "abc",
                     MediaPath = path,
                     Mode = NoirOverrideMode.Preset,
-                    PresetId = "classic-bw"
+                    PresetId = presetId
                 }
             ]
         };

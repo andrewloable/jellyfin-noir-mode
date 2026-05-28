@@ -79,6 +79,31 @@ public sealed class NoirRuleServiceTests
     }
 
     [Fact]
+    public void ItemPresetOverrideAppliesToFfmpegFileProtocolInput()
+    {
+        var service = new NoirRuleService();
+        var state = new NoirState
+        {
+            Enabled = true,
+            ItemOverrides =
+            [
+                new NoirItemOverride
+                {
+                    ItemId = "abc",
+                    MediaPath = "/movies/the.legend.of.aang.the.last.airbender.mp4",
+                    Mode = NoirOverrideMode.Preset,
+                    PresetId = "film-noir"
+                }
+            ]
+        };
+
+        var result = service.Resolve(state, new NoirMediaLookup(null, "file:/movies/the.legend.of.aang.the.last.airbender.mp4"));
+
+        Assert.True(result.ShouldApply);
+        Assert.Equal("film-noir", result.Preset?.Id);
+    }
+
+    [Fact]
     public void OffOverrideReturnsDisabled()
     {
         var service = new NoirRuleService();
