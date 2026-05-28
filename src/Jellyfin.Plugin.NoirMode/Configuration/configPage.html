@@ -11,28 +11,30 @@
                     <div class="sectionTitleContainer">
                         <h2 class="sectionTitle">Noir Mode</h2>
                     </div>
+                    <div class="paperList" style="padding: 1em; margin-bottom: 1.5em;">
+                        <div class="listItemBody">
+                            <h3 class="listItemBodyText" style="margin: 0 0 .35em;">Wrapper status</h3>
+                            <div class="fieldDescription" id="WrapperStatus">Loading...</div>
+                        </div>
+                    </div>
                     <label class="checkboxContainer">
                         <input is="emby-checkbox" type="checkbox" id="NoirEnabled" />
-                        <span>Enable Noir Mode wrapper support</span>
+                        <span>Enable Noir Mode</span>
                     </label>
-                    <div class="inputContainer">
-                        <label class="inputLabel" for="RealFFmpegPath">Real FFmpeg path</label>
-                        <input is="emby-input" id="RealFFmpegPath" type="text" />
+                    <button is="emby-button" type="submit" class="raised button-submit">
+                        <span>Save settings</span>
+                    </button>
+                    <div>
+                        <button is="emby-button" type="button" class="raised button-submit" id="ConfigureWrapper">
+                            <span>Use bundled wrapper</span>
+                        </button>
+                        <button is="emby-button" type="button" class="raised" id="TestWrapper">
+                            <span>Test wrapper</span>
+                        </button>
+                        <button is="emby-button" type="button" class="raised" id="RollbackWrapper">
+                            <span>Restore FFmpeg</span>
+                        </button>
                     </div>
-                    <div class="inputContainer">
-                        <label class="inputLabel" for="WrapperPath">Wrapper path configured in Jellyfin</label>
-                        <input is="emby-input" id="WrapperPath" type="text" />
-                    </div>
-                    <div class="fieldDescription" id="WrapperStatus"></div>
-                    <button is="emby-button" type="button" class="raised button-submit block" id="ConfigureWrapper">
-                        <span>Use bundled wrapper</span>
-                    </button>
-                    <button is="emby-button" type="button" class="raised block" id="RollbackWrapper">
-                        <span>Restore real FFmpeg</span>
-                    </button>
-                    <button is="emby-button" type="button" class="raised block" id="TestWrapper">
-                        <span>Test wrapper</span>
-                    </button>
                     <div class="sectionTitleContainer">
                         <h3 class="sectionTitle">Per-video override</h3>
                     </div>
@@ -40,29 +42,23 @@
                         <label class="inputLabel" for="ItemSearch">Search videos</label>
                         <input is="emby-input" id="ItemSearch" type="text" />
                     </div>
-                    <button is="emby-button" type="button" class="raised block" id="SearchItems">
+                    <button is="emby-button" type="button" class="raised" id="SearchItems">
                         <span>Search</span>
                     </button>
-                    <div class="selectContainer">
-                        <label class="selectLabel" for="ItemSearchResults">Search results</label>
+                    <div class="selectContainer" id="ItemSearchResultsContainer" style="display: none;">
+                        <label class="selectLabel" for="ItemSearchResults">Video</label>
                         <select is="emby-select" id="ItemSearchResults"></select>
                     </div>
-                    <div class="inputContainer">
-                        <label class="inputLabel" for="ItemId">Jellyfin item id</label>
-                        <input is="emby-input" id="ItemId" type="text" />
-                    </div>
+                    <div class="fieldDescription" id="ItemSearchStatus"></div>
                     <div class="selectContainer">
                         <label class="selectLabel" for="PresetId">Preset</label>
                         <select is="emby-select" id="PresetId"></select>
                     </div>
-                    <button is="emby-button" type="button" class="raised button-submit block" id="SaveItemOverride">
-                        <span>Save item override</span>
+                    <button is="emby-button" type="button" class="raised button-submit" id="SaveItemOverride">
+                        <span>Save override</span>
                     </button>
-                    <button is="emby-button" type="button" class="raised block" id="ClearItemOverride">
-                        <span>Clear item override</span>
-                    </button>
-                    <button is="emby-button" type="submit" class="raised button-submit block">
-                        <span>Save plugin settings</span>
+                    <button is="emby-button" type="button" class="raised" id="ClearItemOverride">
+                        <span>Clear override</span>
                     </button>
                 </form>
             </div>
@@ -76,39 +72,68 @@
                     contentType: 'application/json'
                 }, options));
 
+                let latestConfig = {};
+                let latestStatus = {};
+                let selectedItemId = '';
+
+                const setBusy = (button, busy) => {
+                    button.disabled = busy;
+                };
+
+                const setOptions = (select, items, getValue, getLabel) => {
+                    const options = items.map(item => {
+                        const option = document.createElement('option');
+                        option.value = getValue(item);
+                        option.textContent = getLabel(item);
+                        return option;
+                    });
+                    select.replaceChildren.apply(select, options);
+                };
+
                 const loadStatus = async () => {
                     const status = await api('NoirMode/wrapper/status');
-                    document.querySelector('#RealFFmpegPath').value = status.realFFmpegPath || '';
-                    document.querySelector('#WrapperPath').value = status.wrapperPath || '';
-                    document.querySelector('#WrapperStatus').innerHTML = [
-                        `Current Jellyfin FFmpeg: ${status.currentJellyfinFFmpegPath || '<unset>'}`,
-                        `Wrapper configured: ${status.jellyfinUsesWrapper ? 'yes' : 'no'}`,
-                        `Wrapper config: ${status.wrapperConfigExists ? 'present' : 'missing'}`,
-                        status.message || ''
-                    ].filter(Boolean).join('<br />');
+                    latestStatus = status;
+
+                    let text = status.jellyfinUsesWrapper
+                        ? 'Bundled wrapper is active.'
+                        : 'Bundled wrapper is not active.';
+
+                    if (!status.wrapperExists) {
+                        text = 'Bundled wrapper is missing for this server platform.';
+                    } else if (status.enabled && !status.jellyfinUsesWrapper) {
+                        text += ' Use the bundled wrapper before assigning videos.';
+                    }
+
+                    if (status.message) {
+                        text += ' ' + status.message;
+                    }
+
+                    document.querySelector('#WrapperStatus').textContent = text;
                     return status;
                 };
 
                 page.addEventListener('pageshow', async () => {
                     const config = await api('NoirMode/config');
+                    latestConfig = config;
                     document.querySelector('#NoirEnabled').checked = config.enabled;
-                    document.querySelector('#RealFFmpegPath').value = config.realFFmpegPath || '';
-                    document.querySelector('#WrapperPath').value = config.wrapperPath || '';
                     await loadStatus();
                     const presets = await api('NoirMode/presets');
-                    document.querySelector('#PresetId').innerHTML = presets
-                        .map(x => `<option value="${x.id}">${x.label}</option>`)
-                        .join('');
+                    setOptions(
+                        document.querySelector('#PresetId'),
+                        presets,
+                        preset => preset.id,
+                        preset => preset.label);
                 });
 
                 document.querySelector('#NoirModeConfigForm').addEventListener('submit', async (event) => {
                     event.preventDefault();
-                    await api('NoirMode/config', {
+                    latestConfig = await api('NoirMode/config', {
                         type: 'POST',
                         data: JSON.stringify({
                             enabled: document.querySelector('#NoirEnabled').checked,
-                            realFFmpegPath: document.querySelector('#RealFFmpegPath').value,
-                            wrapperPath: document.querySelector('#WrapperPath').value,
+                            allowCustomFilters: !!latestConfig.allowCustomFilters,
+                            realFFmpegPath: latestConfig.realFFmpegPath || latestStatus.realFFmpegPath || '',
+                            wrapperPath: latestConfig.wrapperPath || latestStatus.wrapperPath || '',
                             forceTranscodeNoticeShown: true
                         })
                     });
@@ -116,15 +141,27 @@
                 });
 
                 document.querySelector('#ConfigureWrapper').addEventListener('click', async () => {
-                    const status = await api('NoirMode/wrapper/install', { type: 'POST' });
-                    await loadStatus();
-                    Dashboard.alert(status.message || 'Bundled wrapper configured.');
+                    const button = document.querySelector('#ConfigureWrapper');
+                    setBusy(button, true);
+                    try {
+                        const status = await api('NoirMode/wrapper/install', { type: 'POST' });
+                        await loadStatus();
+                        Dashboard.alert(status.message || 'Bundled wrapper configured.');
+                    } finally {
+                        setBusy(button, false);
+                    }
                 });
 
                 document.querySelector('#RollbackWrapper').addEventListener('click', async () => {
-                    const status = await api('NoirMode/wrapper/rollback', { type: 'POST' });
-                    await loadStatus();
-                    Dashboard.alert(status.message || 'FFmpeg path restored.');
+                    const button = document.querySelector('#RollbackWrapper');
+                    setBusy(button, true);
+                    try {
+                        const status = await api('NoirMode/wrapper/rollback', { type: 'POST' });
+                        await loadStatus();
+                        Dashboard.alert(status.message || 'FFmpeg path restored.');
+                    } finally {
+                        setBusy(button, false);
+                    }
                 });
 
                 document.querySelector('#TestWrapper').addEventListener('click', async () => {
@@ -133,9 +170,14 @@
                 });
 
                 document.querySelector('#SaveItemOverride').addEventListener('click', async () => {
-                    const itemId = document.querySelector('#ItemId').value;
+                    const itemId = selectedItemId;
+                    if (!itemId) {
+                        Dashboard.alert('Select a video first.');
+                        return;
+                    }
+
                     const presetId = document.querySelector('#PresetId').value;
-                    await api(`NoirMode/items/${itemId}/override`, {
+                    await api('NoirMode/items/' + encodeURIComponent(itemId) + '/override', {
                         type: 'PUT',
                         data: JSON.stringify({ itemId, mode: 2, presetId })
                     });
@@ -144,23 +186,37 @@
 
                 document.querySelector('#SearchItems').addEventListener('click', async () => {
                     const query = encodeURIComponent(document.querySelector('#ItemSearch').value || '');
-                    const items = await api(`NoirMode/items/search?query=${query}`);
+                    const items = await api('NoirMode/items/search?query=' + query);
                     const results = document.querySelector('#ItemSearchResults');
-                    results.innerHTML = items
-                        .map(x => `<option value="${x.itemId}">${x.name}</option>`)
-                        .join('');
+                    setOptions(
+                        results,
+                        items,
+                        item => item.itemId,
+                        item => item.name);
+
+                    document.querySelector('#ItemSearchResultsContainer').style.display = items.length ? '' : 'none';
+                    document.querySelector('#ItemSearchStatus').textContent = items.length
+                        ? items.length + ' video' + (items.length === 1 ? '' : 's') + ' found.'
+                        : 'No matching videos found.';
+
+                    selectedItemId = '';
                     if (items.length > 0) {
-                        document.querySelector('#ItemId').value = items[0].itemId;
+                        selectedItemId = items[0].itemId;
                     }
                 });
 
                 document.querySelector('#ItemSearchResults').addEventListener('change', event => {
-                    document.querySelector('#ItemId').value = event.target.value;
+                    selectedItemId = event.target.value;
                 });
 
                 document.querySelector('#ClearItemOverride').addEventListener('click', async () => {
-                    const itemId = document.querySelector('#ItemId').value;
-                    await api(`NoirMode/items/${itemId}/override`, { type: 'DELETE' });
+                    const itemId = selectedItemId;
+                    if (!itemId) {
+                        Dashboard.alert('Select a video first.');
+                        return;
+                    }
+
+                    await api('NoirMode/items/' + encodeURIComponent(itemId) + '/override', { type: 'DELETE' });
                     Dashboard.alert('Noir Mode item override cleared.');
                 });
             })();
