@@ -79,6 +79,8 @@ public sealed class FFmpegWrapperService
             return GetStatus(enabled, existingRealFfmpegPath, wrapperPath).WithMessage("Bundled wrapper was not found for this server OS.");
         }
 
+        EnsureWrapperExecutable(wrapperPath);
+
         var currentFfmpegPath = GetCurrentFfmpegPath();
         _logger.LogInformation("Noir Mode current Jellyfin FFmpeg path before setup: {CurrentFfmpegPath}", currentFfmpegPath);
         var realFfmpegPath = existingRealFfmpegPath;
@@ -160,6 +162,8 @@ public sealed class FFmpegWrapperService
             _logger.LogWarning("Noir Mode wrapper probe failed: wrapper path is missing or does not exist at {WrapperPath}", wrapperPath);
             return (false, "Wrapper path is missing or does not exist.");
         }
+
+        EnsureWrapperExecutable(wrapperPath);
 
         var startInfo = new ProcessStartInfo(wrapperPath)
         {
@@ -269,6 +273,24 @@ public sealed class FFmpegWrapperService
         return string.IsNullOrWhiteSpace(wrapperDirectory)
             ? null
             : Path.Combine(wrapperDirectory, "jellyfin-noir-wrapper.json");
+    }
+
+    private void EnsureWrapperExecutable(string wrapperPath)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return;
+        }
+
+        var mode = File.GetUnixFileMode(wrapperPath);
+        var executableMode = UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute;
+        if ((mode & executableMode) == executableMode)
+        {
+            return;
+        }
+
+        File.SetUnixFileMode(wrapperPath, mode | executableMode);
+        _logger.LogInformation("Noir Mode wrapper executable permissions set: wrapperPath={WrapperPath}", wrapperPath);
     }
 
     private static string? GetRuntimeIdentifier()

@@ -15,7 +15,7 @@ New-Item -ItemType Directory -Path $stagingOut | Out-Null
 
 dotnet publish (Join-Path $root 'src/Jellyfin.Plugin.NoirMode/Jellyfin.Plugin.NoirMode.csproj') -c Release -o $pluginPublishOut
 foreach ($runtime in @('win-x64', 'linux-x64', 'osx-x64', 'osx-arm64')) {
-    dotnet publish (Join-Path $root 'src/Jellyfin.Plugin.NoirMode.Wrapper/Jellyfin.Plugin.NoirMode.Wrapper.csproj') -c Release -r $runtime --self-contained false -o (Join-Path $wrapperOut $runtime)
+    dotnet publish (Join-Path $root 'src/Jellyfin.Plugin.NoirMode.Wrapper/Jellyfin.Plugin.NoirMode.Wrapper.csproj') -c Release -r $runtime --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false -o (Join-Path $wrapperOut $runtime)
 }
 
 foreach ($fileName in @(
@@ -50,7 +50,10 @@ function New-PluginPackage {
 
     Copy-Item -Path (Join-Path $pluginOut '*') -Destination $packageOut -Recurse
     foreach ($runtimeId in $RuntimeIds) {
-        Copy-Item -LiteralPath (Join-Path $wrapperOut $runtimeId) -Destination $bundledWrapperOut -Recurse
+        $runtimeOut = Join-Path $bundledWrapperOut $runtimeId
+        New-Item -ItemType Directory -Path $runtimeOut | Out-Null
+        $wrapperName = if ($runtimeId -eq 'win-x64') { 'Jellyfin.Plugin.NoirMode.Wrapper.exe' } else { 'Jellyfin.Plugin.NoirMode.Wrapper' }
+        Copy-Item -LiteralPath (Join-Path (Join-Path $wrapperOut $runtimeId) $wrapperName) -Destination $runtimeOut
     }
 
     $zipPath = Join-Path $artifacts "$Name.zip"

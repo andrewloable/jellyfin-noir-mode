@@ -63,6 +63,13 @@ That action saves Jellyfin's current FFmpeg path as the real FFmpeg binary, poin
 
 Docker plugin repository installs do not need a separate wrapper mount. Jellyfin downloads the plugin into `/config/plugins`, and the plugin uses that installed wrapper path.
 
+Linuxserver.io Jellyfin images launch Jellyfin with a container-level `--ffmpeg="${FFMPEG_PATH}"` argument. For those images, set `FFMPEG_PATH` in the container environment to the installed Noir Mode wrapper path after installing the plugin, then restart the container:
+
+```yaml
+environment:
+  - FFMPEG_PATH=/config/data/plugins/Noir Mode_0.1.0.0/wrapper/linux-x64/Jellyfin.Plugin.NoirMode.Wrapper
+```
+
 ### 3. Enable Noir Mode
 
 1. Open Jellyfin Dashboard.

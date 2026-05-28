@@ -36,6 +36,8 @@ public sealed class NoirModeConfigPageTests
         Assert.Contains("select.onfocus = pauseSelectorRefresh", script);
         Assert.Contains("select.onblur = () =>", script);
         Assert.Contains("isSelectorInteractionActive() ? 750 : 150", script);
+        Assert.Contains("const isPresetMode = mode =>", script);
+        Assert.Contains("mode.toLowerCase() === 'preset'", script);
         Assert.Contains("read(override, 'mode', 0)", script);
         Assert.Contains("read(preset, 'id', '')", script);
         Assert.Contains("routeMatch[1].replaceAll('-', '')", script);
@@ -50,10 +52,24 @@ public sealed class NoirModeConfigPageTests
         Assert.DoesNotContain("preset.id", script);
     }
 
+    [Fact]
+    public void WrapperServiceRestoresExecutableBitForBundledWrappers()
+    {
+        var service = File.ReadAllText(FindProjectFilePath("Services", "FFmpegWrapperService.cs"));
+
+        Assert.Contains("EnsureWrapperExecutable(wrapperPath)", service);
+        Assert.Contains("File.GetUnixFileMode(wrapperPath)", service);
+        Assert.Contains("File.SetUnixFileMode(wrapperPath", service);
+        Assert.Contains("UnixFileMode.UserExecute", service);
+    }
+
     private static string FindConfigPagePath()
         => FindConfigurationFilePath("configPage.html");
 
     private static string FindConfigurationFilePath(string fileName)
+        => FindProjectFilePath("Configuration", fileName);
+
+    private static string FindProjectFilePath(string projectDirectory, string fileName)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null)
@@ -62,7 +78,7 @@ public sealed class NoirModeConfigPageTests
                 directory.FullName,
                 "src",
                 "Jellyfin.Plugin.NoirMode",
-                "Configuration",
+                projectDirectory,
                 fileName);
 
             if (File.Exists(path))

@@ -50,6 +50,14 @@
         return [];
     };
 
+    const isPresetMode = mode => {
+        if (mode === 2) {
+            return true;
+        }
+
+        return typeof mode === 'string' && mode.toLowerCase() === 'preset';
+    };
+
     const getRouteItemId = () => {
         const hash = window.location.hash || '';
         const hashQueryIndex = hash.indexOf('?');
@@ -195,7 +203,7 @@
 
     const setOptions = (select, presets, override) => {
         const selectedPreset = read(override, 'presetId', '');
-        const selectedValue = read(override, 'mode', 0) === 2 && selectedPreset ? selectedPreset : 'off';
+        const selectedValue = isPresetMode(read(override, 'mode', 0)) && selectedPreset ? selectedPreset : 'off';
         const currentValues = Array.from(select.options).map(option => `${option.value}:${option.textContent}`).join('|');
         const presetItems = asArray(presets);
         const nextValues = [`off:Off`, ...presetItems.map(preset => `${read(preset, 'id', '')}:${read(preset, 'label', '')}`)].join('|');
