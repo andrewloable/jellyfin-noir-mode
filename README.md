@@ -162,19 +162,157 @@ MVP 1 targets Jellyfin `10.11.0.0` ABI and .NET `net9.0`.
 
 ## Installation
 
-See [docs/packaging.md](docs/packaging.md).
+Download these files from the GitHub release:
 
-Short version:
+* Windows server: `jellyfin-plugin-noir-mode-windows-x64-0.1.0.zip`
+* Linux server or Docker: `jellyfin-plugin-noir-mode-linux-x64-0.1.0.zip`
+* macOS server: `jellyfin-plugin-noir-mode-macos-0.1.0.zip`
+* `checksums.txt`
+
+Each plugin ZIP includes the plugin files plus the wrapper binaries for that server OS. The macOS ZIP includes both `osx-x64` and `osx-arm64` wrapper builds.
+
+Jellyfin plugin repository manifests cannot select a different ZIP by server OS. For Windows and macOS servers, install manually from the matching GitHub release ZIP.
+
+Verify the downloaded files against `checksums.txt` before installing.
+
+### 1. Install The Plugin
+
+Extract the ZIP for your Jellyfin server OS into a dedicated Jellyfin plugin directory.
+
+Typical plugin locations:
 
 ```text
-1. Build with scripts/package.ps1
-2. Copy plugin files to Jellyfin plugin directory
-3. Publish/copy the wrapper executable to a stable path
-4. Set Jellyfin's FFmpeg path to the wrapper
-5. Set NOIR_REAL_FFMPEG and NOIR_STATE_FILE for the wrapper process
-6. Restart Jellyfin
-7. Enable Noir Mode and configure per-video overrides
+Windows: C:\ProgramData\Jellyfin\Server\plugins\Noir Mode
+Linux:   /var/lib/jellyfin/plugins/Noir Mode
+Docker:  /config/plugins/Noir Mode
 ```
+
+Restart Jellyfin after copying the plugin files.
+
+### 2. Install The Wrapper
+
+The wrapper is included inside the extracted plugin folder. You can use it in place from the plugin directory.
+
+```text
+Windows example: C:\ProgramData\Jellyfin\Server\plugins\Noir Mode\wrapper\win-x64\Jellyfin.Plugin.NoirMode.Wrapper.exe
+Linux example:   /var/lib/jellyfin/plugins/Noir Mode/wrapper/linux-x64/Jellyfin.Plugin.NoirMode.Wrapper
+macOS Intel:     /var/lib/jellyfin/plugins/Noir Mode/wrapper/osx-x64/Jellyfin.Plugin.NoirMode.Wrapper
+macOS Apple:     /var/lib/jellyfin/plugins/Noir Mode/wrapper/osx-arm64/Jellyfin.Plugin.NoirMode.Wrapper
+```
+
+On Linux and macOS, make the wrapper executable if needed:
+
+```bash
+chmod +x "/var/lib/jellyfin/plugins/Noir Mode/wrapper/linux-x64/Jellyfin.Plugin.NoirMode.Wrapper"
+chmod +x "/var/lib/jellyfin/plugins/Noir Mode/wrapper/osx-x64/Jellyfin.Plugin.NoirMode.Wrapper"
+chmod +x "/var/lib/jellyfin/plugins/Noir Mode/wrapper/osx-arm64/Jellyfin.Plugin.NoirMode.Wrapper"
+```
+
+For Docker, the wrapper is mounted with the plugin folder. The wrapper path you configure in Jellyfin must be the path inside the container, not the host path.
+
+Example host layout:
+
+```text
+./jellyfin/
+  config/
+  cache/
+  media/
+  Noir Mode/
+    wrapper/
+      linux-x64/
+        Jellyfin.Plugin.NoirMode.Wrapper
+```
+
+Example Docker volume mounts:
+
+```yaml
+volumes:
+  - ./config:/config
+  - ./cache:/cache
+  - ./media:/media:ro
+  - ./Noir Mode:/config/plugins/Noir Mode:ro
+```
+
+Inside Jellyfin Dashboard, the wrapper path is:
+
+```text
+/config/plugins/Noir Mode/wrapper/linux-x64/Jellyfin.Plugin.NoirMode.Wrapper
+```
+
+### 3. Configure Jellyfin To Use The Wrapper
+
+In Jellyfin Dashboard, set the FFmpeg path to the wrapper executable, not the real FFmpeg binary.
+
+Keep the original Jellyfin FFmpeg path. You will need it for `NOIR_REAL_FFMPEG`.
+
+### 4. Set Wrapper Environment Variables
+
+The wrapper needs two environment variables in the Jellyfin server process:
+
+```text
+NOIR_REAL_FFMPEG=<path to the real Jellyfin FFmpeg binary>
+NOIR_STATE_FILE=<path to jellyfin-noir-mode-state.json>
+```
+
+Examples:
+
+```text
+Windows:
+NOIR_REAL_FFMPEG=C:\Program Files\Jellyfin\Server\ffmpeg.exe
+NOIR_STATE_FILE=C:\ProgramData\Jellyfin\Server\plugins\configurations\jellyfin-noir-mode-state.json
+
+Linux:
+NOIR_REAL_FFMPEG=/usr/lib/jellyfin-ffmpeg/ffmpeg
+NOIR_STATE_FILE=/var/lib/jellyfin/plugins/configurations/jellyfin-noir-mode-state.json
+
+Docker:
+NOIR_REAL_FFMPEG=/usr/lib/jellyfin-ffmpeg/ffmpeg
+NOIR_STATE_FILE=/config/plugins/configurations/jellyfin-noir-mode-state.json
+```
+
+Restart Jellyfin after changing environment variables.
+
+For Docker, set these environment variables on the Jellyfin container:
+
+Example `docker-compose.yml` fragment:
+
+```yaml
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:10.11.0
+    ports:
+      - "8096:8096"
+    environment:
+      - NOIR_REAL_FFMPEG=/usr/lib/jellyfin-ffmpeg/ffmpeg
+      - NOIR_STATE_FILE=/config/plugins/configurations/jellyfin-noir-mode-state.json
+    volumes:
+      - ./config:/config
+      - ./cache:/cache
+      - ./media:/media:ro
+      - ./Noir Mode:/config/plugins/Noir Mode:ro
+```
+
+If your Jellyfin image uses a different FFmpeg path, update `NOIR_REAL_FFMPEG` to match that container path.
+
+### 5. Enable Noir Mode
+
+1. Open Jellyfin Dashboard.
+2. Go to Plugins.
+3. Open Noir Mode.
+4. Enable wrapper support.
+5. Confirm the real FFmpeg path and wrapper path.
+6. Search for a video.
+7. Set that video's Noir Mode preset.
+
+Every video is disabled by default. Noir Mode applies only to videos with a per-video preset override.
+
+### Rollback
+
+1. Set Jellyfin's FFmpeg path back to the real FFmpeg binary.
+2. Restart Jellyfin.
+3. Disable or remove the Noir Mode plugin.
+
+No media files are modified by Noir Mode.
 
 ---
 
