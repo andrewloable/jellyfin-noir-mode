@@ -12,7 +12,7 @@
         "changelog": "Initial MVP implementation.",
         "targetAbi": "10.11.0.0",
         "sourceUrl": "https://github.com/andrewloable/jellyfin-noir-mode/releases/download/v0.1.0/jellyfin-plugin-noir-mode-linux-x64-0.1.0.zip",
-        "checksum": "bb5b0fdf0fec3e6abe873ca4658be3c3",
+        "checksum": "dc7ddbb933c1e7ad4949702ba66ead84",
         "timestamp": "2026-05-28T00:00:00Z"
       }
     ]
