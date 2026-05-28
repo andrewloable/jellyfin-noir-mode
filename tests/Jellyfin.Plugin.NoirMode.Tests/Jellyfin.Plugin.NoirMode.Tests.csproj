@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Jellyfin.Plugin.NoirMode\Jellyfin.Plugin.NoirMode.csproj" />
     <ProjectReference Include="..\..\src\Jellyfin.Plugin.NoirMode.Core\Jellyfin.Plugin.NoirMode.Core.csproj" />
     <ProjectReference Include="..\..\src\Jellyfin.Plugin.NoirMode.Wrapper\Jellyfin.Plugin.NoirMode.Wrapper.csproj" />
   </ItemGroup>

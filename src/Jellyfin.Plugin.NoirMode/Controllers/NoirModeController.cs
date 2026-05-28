@@ -3,6 +3,7 @@ using Jellyfin.Plugin.NoirMode.Core;
 using Jellyfin.Plugin.NoirMode.Models;
 using Jellyfin.Plugin.NoirMode.Services;
 using Jellyfin.Data.Enums;
+using MediaBrowser.Common.Api;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Library;
@@ -13,7 +14,7 @@ using Microsoft.Extensions.Logging;
 namespace Jellyfin.Plugin.NoirMode.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(Policy = Policies.RequiresElevation)]
 [Route("NoirMode")]
 public sealed class NoirModeController : ControllerBase
 {
