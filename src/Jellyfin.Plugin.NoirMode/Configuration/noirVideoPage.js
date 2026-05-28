@@ -68,7 +68,7 @@
 
         const routeMatch = hash.match(/(?:details|itemdetails|video|movies?|episodes?)[^a-f0-9-]*([a-f0-9]{32}|[a-f0-9-]{36})/i);
         if (routeMatch) {
-            return routeMatch[1].replaceAll('-', '');
+            return routeMatch[1].replace(/-/g, '');
         }
 
         return new URLSearchParams(window.location.search).get('id');
@@ -208,6 +208,16 @@
         return button;
     };
 
+    const setChildren = (element, children) => {
+        while (element.firstChild) {
+            element.removeChild(element.firstChild);
+        }
+
+        for (const child of children) {
+            element.appendChild(child);
+        }
+    };
+
     const saveSelection = async (itemId, presetId, status) => {
         status.textContent = 'Saving...';
 
@@ -281,7 +291,7 @@
                 })
             ];
 
-            scroller.replaceChildren(...buttons);
+            setChildren(scroller, buttons);
             status.textContent = '';
 
             for (const button of buttons) {

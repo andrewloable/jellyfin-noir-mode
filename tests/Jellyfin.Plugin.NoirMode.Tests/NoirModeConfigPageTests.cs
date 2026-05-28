@@ -40,21 +40,24 @@ public sealed class NoirModeConfigPageTests
         Assert.Contains("classList.add(menuItemClass)", script);
         Assert.Contains("actionSheetMenuItem", script);
         Assert.Contains("showNoirModeDialog(itemId)", script);
+        Assert.Contains("const setChildren = (element, children) =>", script);
         Assert.Contains("const presetItems = asArray(presets)", script);
         Assert.Contains("const isPresetMode = mode =>", script);
         Assert.Contains("mode.toLowerCase() === 'preset'", script);
         Assert.Contains("read(override, 'mode', 0)", script);
         Assert.Contains("read(preset, 'id', '')", script);
-        Assert.Contains("routeMatch[1].replaceAll('-', '')", script);
+        Assert.Contains("routeMatch[1].replace(/-/g, '')", script);
         Assert.Contains("const [presets, override] = await Promise.all", script);
         Assert.Contains("document.addEventListener('click', handleMoreMenuClick, true)", script);
         Assert.True(
             script.IndexOf("const [presets, override] = await Promise.all", StringComparison.Ordinal)
-                < script.IndexOf("scroller.replaceChildren(...buttons);", StringComparison.Ordinal),
+                < script.IndexOf("setChildren(scroller, buttons);", StringComparison.Ordinal),
             "The preset menu should not be populated until its API data has loaded.");
         Assert.Contains("ApiClient.getItem", script);
         Assert.DoesNotContain("override.mode", script);
         Assert.DoesNotContain("preset.id", script);
+        Assert.DoesNotContain("replaceChildren", script);
+        Assert.DoesNotContain("replaceAll", script);
         Assert.DoesNotContain("trackSelections", script);
         Assert.DoesNotContain("selectContainer", script);
         Assert.DoesNotContain("document.createElement('select'", script);
