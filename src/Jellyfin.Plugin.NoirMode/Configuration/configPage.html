@@ -69,6 +69,7 @@
                 const api = (path, options) => ApiClient.ajax(Object.assign({
                     url: ApiClient.getUrl(path),
                     type: 'GET',
+                    dataType: 'json',
                     contentType: 'application/json'
                 }, options));
 
@@ -93,18 +94,39 @@
                     return fallback;
                 };
 
+                const asArray = value => {
+                    if (Array.isArray(value)) {
+                        return value;
+                    }
+
+                    if (typeof value === 'string' && value) {
+                        try {
+                            const parsed = JSON.parse(value);
+                            return Array.isArray(parsed) ? parsed : [];
+                        } catch (error) {
+                            console.debug('Noir Mode response was not a JSON array', error);
+                            return [];
+                        }
+                    }
+
+                    return [];
+                };
+
                 const setBusy = (button, busy) => {
                     button.disabled = busy;
                 };
 
                 const setOptions = (select, items, getValue, getLabel) => {
-                    const options = items.map(item => {
+                    while (select.firstChild) {
+                        select.removeChild(select.firstChild);
+                    }
+
+                    for (const item of asArray(items)) {
                         const option = document.createElement('option');
                         option.value = getValue(item);
                         option.textContent = getLabel(item);
-                        return option;
-                    });
-                    select.replaceChildren.apply(select, options);
+                        select.appendChild(option);
+                    }
                 };
 
                 const loadStatus = async () => {
@@ -138,7 +160,7 @@
                     latestConfig = config;
                     document.querySelector('#NoirEnabled').checked = read(config, 'enabled', false);
                     await loadStatus();
-                    const presets = await api('NoirMode/presets');
+                    const presets = asArray(await api('NoirMode/presets'));
                     setOptions(
                         document.querySelector('#PresetId'),
                         presets,
@@ -207,7 +229,7 @@
 
                 document.querySelector('#SearchItems').addEventListener('click', async () => {
                     const query = encodeURIComponent(document.querySelector('#ItemSearch').value || '');
-                    const items = await api('NoirMode/items/search?query=' + query);
+                    const items = asArray(await api('NoirMode/items/search?query=' + query));
                     const results = document.querySelector('#ItemSearchResults');
                     setOptions(
                         results,
