@@ -76,6 +76,23 @@
                 let latestStatus = {};
                 let selectedItemId = '';
 
+                const read = (value, camelName, fallback) => {
+                    if (!value) {
+                        return fallback;
+                    }
+
+                    if (Object.prototype.hasOwnProperty.call(value, camelName)) {
+                        return value[camelName];
+                    }
+
+                    const pascalName = camelName.charAt(0).toUpperCase() + camelName.slice(1);
+                    if (Object.prototype.hasOwnProperty.call(value, pascalName)) {
+                        return value[pascalName];
+                    }
+
+                    return fallback;
+                };
+
                 const setBusy = (button, busy) => {
                     button.disabled = busy;
                 };
@@ -93,19 +110,23 @@
                 const loadStatus = async () => {
                     const status = await api('NoirMode/wrapper/status');
                     latestStatus = status;
+                    const enabled = read(status, 'enabled', false);
+                    const jellyfinUsesWrapper = read(status, 'jellyfinUsesWrapper', false);
+                    const wrapperExists = read(status, 'wrapperExists', false);
 
-                    let text = status.jellyfinUsesWrapper
+                    let text = jellyfinUsesWrapper
                         ? 'Bundled wrapper is active.'
                         : 'Bundled wrapper is not active.';
 
-                    if (!status.wrapperExists) {
+                    if (!wrapperExists) {
                         text = 'Bundled wrapper is missing for this server platform.';
-                    } else if (status.enabled && !status.jellyfinUsesWrapper) {
+                    } else if (enabled && !jellyfinUsesWrapper) {
                         text += ' Use the bundled wrapper before assigning videos.';
                     }
 
-                    if (status.message) {
-                        text += ' ' + status.message;
+                    const message = read(status, 'message', '');
+                    if (message) {
+                        text += ' ' + message;
                     }
 
                     document.querySelector('#WrapperStatus').textContent = text;
@@ -115,14 +136,14 @@
                 page.addEventListener('pageshow', async () => {
                     const config = await api('NoirMode/config');
                     latestConfig = config;
-                    document.querySelector('#NoirEnabled').checked = config.enabled;
+                    document.querySelector('#NoirEnabled').checked = read(config, 'enabled', false);
                     await loadStatus();
                     const presets = await api('NoirMode/presets');
                     setOptions(
                         document.querySelector('#PresetId'),
                         presets,
-                        preset => preset.id,
-                        preset => preset.label);
+                        preset => read(preset, 'id', ''),
+                        preset => read(preset, 'label', ''));
                 });
 
                 document.querySelector('#NoirModeConfigForm').addEventListener('submit', async (event) => {
@@ -131,9 +152,9 @@
                         type: 'POST',
                         data: JSON.stringify({
                             enabled: document.querySelector('#NoirEnabled').checked,
-                            allowCustomFilters: !!latestConfig.allowCustomFilters,
-                            realFFmpegPath: latestConfig.realFFmpegPath || latestStatus.realFFmpegPath || '',
-                            wrapperPath: latestConfig.wrapperPath || latestStatus.wrapperPath || '',
+                            allowCustomFilters: !!read(latestConfig, 'allowCustomFilters', false),
+                            realFFmpegPath: read(latestConfig, 'realFFmpegPath', '') || read(latestStatus, 'realFFmpegPath', ''),
+                            wrapperPath: read(latestConfig, 'wrapperPath', '') || read(latestStatus, 'wrapperPath', ''),
                             forceTranscodeNoticeShown: true
                         })
                     });
@@ -146,7 +167,7 @@
                     try {
                         const status = await api('NoirMode/wrapper/install', { type: 'POST' });
                         await loadStatus();
-                        Dashboard.alert(status.message || 'Bundled wrapper configured.');
+                        Dashboard.alert(read(status, 'message', '') || 'Bundled wrapper configured.');
                     } finally {
                         setBusy(button, false);
                     }
@@ -158,7 +179,7 @@
                     try {
                         const status = await api('NoirMode/wrapper/rollback', { type: 'POST' });
                         await loadStatus();
-                        Dashboard.alert(status.message || 'FFmpeg path restored.');
+                        Dashboard.alert(read(status, 'message', '') || 'FFmpeg path restored.');
                     } finally {
                         setBusy(button, false);
                     }
@@ -166,7 +187,7 @@
 
                 document.querySelector('#TestWrapper').addEventListener('click', async () => {
                     const result = await api('NoirMode/wrapper/test', { type: 'POST' });
-                    Dashboard.alert(result.output || (result.success ? 'Wrapper test passed.' : 'Wrapper test failed.'));
+                    Dashboard.alert(read(result, 'output', '') || (read(result, 'success', false) ? 'Wrapper test passed.' : 'Wrapper test failed.'));
                 });
 
                 document.querySelector('#SaveItemOverride').addEventListener('click', async () => {
@@ -191,8 +212,8 @@
                     setOptions(
                         results,
                         items,
-                        item => item.itemId,
-                        item => item.name);
+                        item => read(item, 'itemId', ''),
+                        item => read(item, 'name', ''));
 
                     document.querySelector('#ItemSearchResultsContainer').style.display = items.length ? '' : 'none';
                     document.querySelector('#ItemSearchStatus').textContent = items.length
@@ -201,7 +222,7 @@
 
                     selectedItemId = '';
                     if (items.length > 0) {
-                        selectedItemId = items[0].itemId;
+                        selectedItemId = read(items[0], 'itemId', '');
                     }
                 });
 

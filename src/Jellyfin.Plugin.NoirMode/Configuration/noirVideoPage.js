@@ -13,6 +13,23 @@
         contentType: 'application/json'
     }, options));
 
+    const read = (value, camelName, fallback) => {
+        if (!value) {
+            return fallback;
+        }
+
+        if (Object.prototype.hasOwnProperty.call(value, camelName)) {
+            return value[camelName];
+        }
+
+        const pascalName = camelName.charAt(0).toUpperCase() + camelName.slice(1);
+        if (Object.prototype.hasOwnProperty.call(value, pascalName)) {
+            return value[pascalName];
+        }
+
+        return fallback;
+    };
+
     const getRouteItemId = () => {
         const hash = window.location.hash || '';
         const hashQueryIndex = hash.indexOf('?');
@@ -107,9 +124,10 @@
     };
 
     const setOptions = (select, presets, override) => {
-        const selectedValue = override.mode === 2 && override.presetId ? override.presetId : 'off';
+        const selectedPreset = read(override, 'presetId', '');
+        const selectedValue = read(override, 'mode', 0) === 2 && selectedPreset ? selectedPreset : 'off';
         const currentValues = Array.from(select.options).map(option => `${option.value}:${option.textContent}`).join('|');
-        const nextValues = [`off:Off`, ...presets.map(preset => `${preset.id}:${preset.label}`)].join('|');
+        const nextValues = [`off:Off`, ...presets.map(preset => `${read(preset, 'id', '')}:${read(preset, 'label', '')}`)].join('|');
 
         if (currentValues === nextValues) {
             select.value = selectedValue;
@@ -125,8 +143,8 @@
 
         for (const preset of presets) {
             const option = document.createElement('option');
-            option.value = preset.id;
-            option.textContent = preset.label;
+            option.value = read(preset, 'id', '');
+            option.textContent = read(preset, 'label', '');
             select.appendChild(option);
         }
 
