@@ -48,11 +48,36 @@
         return new URLSearchParams(window.location.search).get('id');
     };
 
-    const hasVideoControls = page => Boolean(
-        page.querySelector('.trackSelections')
-        || page.querySelector('.selectVideoContainer')
-        || page.querySelector('.selectAudioContainer')
-        || page.querySelector('.selectSubtitlesContainer'));
+    const isMediaLabel = element => {
+        const text = element.textContent ? element.textContent.trim() : '';
+        return text === 'Video' || text === 'Audio' || text === 'Subtitles';
+    };
+
+    const findModernMediaAnchor = page => {
+        const labels = Array.from(page.querySelectorAll('label, span, div, p'))
+            .filter(element => element.children.length === 0 && isMediaLabel(element));
+        const subtitleLabel = labels.find(element => element.textContent.trim() === 'Subtitles');
+        const label = subtitleLabel || labels[labels.length - 1];
+
+        if (!label) {
+            return null;
+        }
+
+        return label.closest('[class*="MuiGrid"], [class*="item"], [class*="row"]')
+            || label.parentElement;
+    };
+
+    const findInsertionAnchor = page => {
+        const subtitleContainer = page.querySelector('.selectSubtitlesContainer');
+        if (subtitleContainer && !subtitleContainer.classList.contains('hide')) {
+            return subtitleContainer;
+        }
+
+        return page.querySelector('.trackSelections')
+            || page.querySelector('.selectAudioContainer')
+            || page.querySelector('.selectVideoContainer')
+            || findModernMediaAnchor(page);
+    };
 
     const ensureStyles = () => {
         if (document.getElementById(styleId)) {
@@ -108,7 +133,7 @@
         return container;
     };
 
-    const ensureContainer = page => {
+    const ensureContainer = (page, anchor) => {
         ensureStyles();
 
         let container = document.getElementById(containerId);
@@ -116,17 +141,15 @@
             container = createContainer();
         }
 
-        const trackSelections = page.querySelector('.trackSelections');
-        const subtitleContainer = page.querySelector('.selectSubtitlesContainer');
-        if (trackSelections && subtitleContainer && !trackSelections.classList.contains('hide')) {
+        if (anchor && !anchor.classList.contains('trackSelections')) {
             container.classList.add('noirModeInlineSelection');
-            subtitleContainer.insertAdjacentElement('afterend', container);
+            anchor.insertAdjacentElement('afterend', container);
             return container;
         }
 
         container.classList.remove('noirModeInlineSelection');
-        if (trackSelections) {
-            trackSelections.insertAdjacentElement('afterend', container);
+        if (anchor) {
+            anchor.insertAdjacentElement('afterend', container);
             return container;
         }
 
@@ -211,7 +234,8 @@
         }
 
         try {
-            if (!hasVideoControls(page)) {
+            const anchor = findInsertionAnchor(page);
+            if (!anchor) {
                 removeContainer();
                 lastItemId = undefined;
                 return;
@@ -225,7 +249,7 @@
                 return;
             }
 
-            const container = ensureContainer(page);
+            const container = ensureContainer(page, anchor);
             const select = container.querySelector('select');
             const status = container.querySelector('.noirModeStatus');
 
