@@ -18,6 +18,8 @@ public sealed class NoirModeConfigPageTests
         Assert.DoesNotContain("PresetId", page);
         Assert.DoesNotContain("SaveItemOverride", page);
         Assert.DoesNotContain("ClearItemOverride", page);
+        Assert.DoesNotContain("TestWrapper", page);
+        Assert.DoesNotContain("Test wrapper", page);
     }
 
     [Fact]

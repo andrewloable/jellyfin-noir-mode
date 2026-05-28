@@ -28,9 +28,6 @@
                         <button is="emby-button" type="button" class="raised button-submit" id="ConfigureWrapper">
                             <span>Use bundled wrapper</span>
                         </button>
-                        <button is="emby-button" type="button" class="raised" id="TestWrapper">
-                            <span>Test wrapper</span>
-                        </button>
                         <button is="emby-button" type="button" class="raised" id="RollbackWrapper">
                             <span>Restore FFmpeg</span>
                         </button>
@@ -142,11 +139,6 @@
                     } finally {
                         setBusy(button, false);
                     }
-                });
-
-                document.querySelector('#TestWrapper').addEventListener('click', async () => {
-                    const result = await api('NoirMode/wrapper/test', { type: 'POST' });
-                    Dashboard.alert(read(result, 'output', '') || (read(result, 'success', false) ? 'Wrapper test passed.' : 'Wrapper test failed.'));
                 });
             })();
         </script>
