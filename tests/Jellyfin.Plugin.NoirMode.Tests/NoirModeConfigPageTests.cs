@@ -22,14 +22,17 @@ public sealed class NoirModeConfigPageTests
         var script = File.ReadAllText(FindConfigurationFilePath("noirVideoPage.js"));
 
         Assert.Contains("const read = (value, camelName, fallback)", script);
+        Assert.Contains("const hasVideoControls = page => Boolean", script);
         Assert.Contains("read(override, 'mode', 0)", script);
         Assert.Contains("read(preset, 'id', '')", script);
+        Assert.Contains("routeMatch[1].replaceAll('-', '')", script);
         Assert.Contains("const [presets, override] = await Promise.all", script);
         Assert.Contains("const container = ensureContainer(page);", script);
         Assert.True(
             script.IndexOf("const [presets, override] = await Promise.all", StringComparison.Ordinal)
                 < script.IndexOf("const container = ensureContainer(page);", StringComparison.Ordinal),
             "The selector should not be inserted until its API data has loaded.");
+        Assert.DoesNotContain("ApiClient.getItem", script);
         Assert.DoesNotContain("override.mode", script);
         Assert.DoesNotContain("preset.id", script);
     }

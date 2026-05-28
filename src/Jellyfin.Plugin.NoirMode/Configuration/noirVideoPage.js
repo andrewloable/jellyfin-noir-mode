@@ -2,7 +2,6 @@
     const containerId = 'noirModeVideoPageSelection';
     const selectId = 'noirModeVideoPageSelect';
     const styleId = 'noirModeVideoPageStyles';
-    const videoTypes = new Set(['Movie', 'Episode', 'Video', 'MusicVideo']);
     let presetsPromise;
     let lastItemId;
     let renderTimer;
@@ -41,10 +40,19 @@
             }
         }
 
+        const routeMatch = hash.match(/(?:details|itemdetails|video|movies?|episodes?)[^a-f0-9-]*([a-f0-9]{32}|[a-f0-9-]{36})/i);
+        if (routeMatch) {
+            return routeMatch[1].replaceAll('-', '');
+        }
+
         return new URLSearchParams(window.location.search).get('id');
     };
 
-    const isVideoItem = item => item && (item.MediaType === 'Video' || videoTypes.has(item.Type));
+    const hasVideoControls = page => Boolean(
+        page.querySelector('.trackSelections')
+        || page.querySelector('.selectVideoContainer')
+        || page.querySelector('.selectAudioContainer')
+        || page.querySelector('.selectSubtitlesContainer'));
 
     const ensureStyles = () => {
         if (document.getElementById(styleId)) {
@@ -203,12 +211,7 @@
         }
 
         try {
-            const item = await ApiClient.getItem(ApiClient.getCurrentUserId(), itemId);
-            if (version !== renderVersion) {
-                return;
-            }
-
-            if (!isVideoItem(item)) {
+            if (!hasVideoControls(page)) {
                 removeContainer();
                 lastItemId = undefined;
                 return;
