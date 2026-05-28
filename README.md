@@ -24,7 +24,7 @@ This project is currently in the planning and scaffolding stage.
 * Keep original media files untouched
 * Support multiple visual presets
 * Provide a simple configuration interface
-* Explore per-user or per-session playback preferences
+* Support per-video Noir Mode preferences
 
 ---
 
@@ -36,6 +36,7 @@ This project is currently in the planning and scaffolding stage.
 * High-contrast black-and-white mode
 * Configurable FFmpeg filter chains
 * Server-side, non-destructive video processing
+* Per-video Noir Mode disabled by default
 * Plugin configuration page inside Jellyfin
 
 ### Possible Presets
@@ -49,8 +50,6 @@ This project is currently in the planning and scaffolding stage.
 
 ### Future Ideas
 
-* Per-user default Noir Mode setting
-* Per-library or per-collection defaults
 * Per-movie override
 * Toggle from playback UI
 * Film grain intensity control
@@ -117,8 +116,10 @@ Example future configuration:
 ```json
 {
   "enabled": true,
-  "defaultPreset": "film-noir",
   "allowCustomFilters": false,
+  "itemOverrides": {
+    "jellyfin-item-id": "film-noir"
+  },
   "presets": {
     "classic-bw": "hue=s=0",
     "film-noir": "hue=s=0,eq=contrast=1.35:brightness=-0.03",
@@ -214,7 +215,7 @@ This plugin will likely need to investigate Jellyfin internals related to:
 * Media playback pipeline
 * FFmpeg argument generation
 * Plugin configuration pages
-* User/session settings
+* Per-video settings
 * Client playback controls
 
 Alternative approaches may include:
@@ -244,7 +245,7 @@ Useful areas for contribution:
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the GNU General Public License v3.0.
 
 See the [LICENSE](LICENSE) file for details.
 
