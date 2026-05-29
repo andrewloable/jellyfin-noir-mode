@@ -17,6 +17,23 @@ function Write-Utf8NoBom {
     [System.IO.File]::WriteAllText($Path, $Content, $encoding)
 }
 
+function Write-UnixWrapperScript {
+    param(
+        [string] $Path,
+        [string] $Tool
+    )
+
+    $toolLine = if ($Tool -eq 'ffprobe') { 'NOIR_WRAPPER_TOOL=ffprobe ' } else { '' }
+    $script = @"
+#!/bin/sh
+set -e
+DIR=`$(CDPATH= cd -- "`$(dirname -- "`$0")" && pwd)
+${toolLine}exec "`$DIR/ffmpeg" "`$@"
+"@
+
+    Write-Utf8NoBom -Path $Path -Content $script
+}
+
 Remove-Item -LiteralPath $artifacts -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path $pluginPublishOut | Out-Null
 New-Item -ItemType Directory -Path $pluginOut | Out-Null
@@ -96,8 +113,9 @@ function New-PluginPackage {
         }
         else {
             Copy-Item -LiteralPath $wrapperSource -Destination (Join-Path $runtimeOut 'ffmpeg')
-            Copy-Item -LiteralPath $wrapperSource -Destination (Join-Path $runtimeOut 'ffprobe')
-            Copy-Item -LiteralPath $wrapperSource -Destination (Join-Path $runtimeOut 'ffprobe.Wrapper')
+            Write-UnixWrapperScript -Path (Join-Path $runtimeOut 'ffprobe') -Tool 'ffprobe'
+            Write-UnixWrapperScript -Path (Join-Path $runtimeOut 'ffprobe.Wrapper') -Tool 'ffprobe'
+            Write-UnixWrapperScript -Path (Join-Path $runtimeOut 'Jellyfin.Plugin.NoirMode.Wrapper') -Tool 'ffmpeg'
         }
     }
 

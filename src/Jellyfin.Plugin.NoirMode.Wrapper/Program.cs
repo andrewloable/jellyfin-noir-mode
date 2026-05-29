@@ -60,6 +60,12 @@ return exitCode;
 
 static bool IsFfprobeInvocation()
 {
+    var wrapperTool = Environment.GetEnvironmentVariable("NOIR_WRAPPER_TOOL");
+    if (string.Equals(wrapperTool, "ffprobe", StringComparison.OrdinalIgnoreCase))
+    {
+        return true;
+    }
+
     var processName = Environment.GetCommandLineArgs().FirstOrDefault();
     var executableName = string.IsNullOrWhiteSpace(processName)
         ? null
