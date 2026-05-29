@@ -28,7 +28,7 @@ function Write-UnixWrapperScript {
 #!/bin/sh
 set -e
 DIR=`$(CDPATH= cd -- "`$(dirname -- "`$0")" && pwd)
-${toolLine}exec "`$DIR/ffmpeg" "`$@"
+${toolLine}exec "`$DIR/jellyfin-noir-wrapper" "`$@"
 "@
 
     Write-Utf8NoBom -Path $Path -Content $script
@@ -107,12 +107,12 @@ function New-PluginPackage {
         Copy-Item -LiteralPath $wrapperSource -Destination $runtimeOut
 
         if ($runtimeId -eq 'win-x64') {
-            Copy-Item -LiteralPath $wrapperSource -Destination (Join-Path $runtimeOut 'ffmpeg.exe')
+            Copy-Item -LiteralPath $wrapperSource -Destination (Join-Path $runtimeOut 'jellyfin-noir-wrapper.exe')
             Copy-Item -LiteralPath $wrapperSource -Destination (Join-Path $runtimeOut 'ffprobe.exe')
             Copy-Item -LiteralPath $wrapperSource -Destination (Join-Path $runtimeOut 'ffprobe.Wrapper.exe')
         }
         else {
-            Copy-Item -LiteralPath $wrapperSource -Destination (Join-Path $runtimeOut 'ffmpeg')
+            Copy-Item -LiteralPath $wrapperSource -Destination (Join-Path $runtimeOut 'jellyfin-noir-wrapper')
             Write-UnixWrapperScript -Path (Join-Path $runtimeOut 'ffprobe') -Tool 'ffprobe'
             Write-UnixWrapperScript -Path (Join-Path $runtimeOut 'ffprobe.Wrapper') -Tool 'ffprobe'
             Write-UnixWrapperScript -Path (Join-Path $runtimeOut 'Jellyfin.Plugin.NoirMode.Wrapper') -Tool 'ffmpeg'

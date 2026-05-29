@@ -210,7 +210,7 @@ public sealed class FFmpegWrapperService
             return null;
         }
 
-        var executableName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "ffmpeg.exe" : "ffmpeg";
+        var executableName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "jellyfin-noir-wrapper.exe" : "jellyfin-noir-wrapper";
         var runtime = GetRuntimeIdentifier();
         if (runtime is null)
         {
