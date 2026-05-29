@@ -2,6 +2,8 @@
 
 A Jellyfin plugin that adds real-time Noir Mode playback using FFmpeg filters. It lets selected videos play in cinematic black-and-white styles without modifying the original media files.
 
+**Important:** Noir Mode only affects playback when Jellyfin is actively transcoding the video on the server. If the video Direct Plays or Direct Streams, or if transcoding is disabled for that playback session, the server FFmpeg wrapper is bypassed and Noir Mode will not change the picture.
+
 ## Features
 
 * Per-video Noir Mode presets, disabled by default.
@@ -22,7 +24,7 @@ A Jellyfin plugin that adds real-time Noir Mode playback using FFmpeg filters. I
 
 * Jellyfin Server `10.11.0.0`
 * Jellyfin FFmpeg
-* A playback path that uses server-side video transcoding
+* Server-side video transcoding enabled and actually used when the video is played
 
 ## Installation
 
