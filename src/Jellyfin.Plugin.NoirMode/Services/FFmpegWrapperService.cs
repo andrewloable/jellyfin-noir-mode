@@ -347,7 +347,16 @@ public sealed class FFmpegWrapperService
             yield break;
         }
 
-        yield return Path.Combine(directory, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "ffprobe.exe" : "ffprobe");
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            yield return Path.Combine(directory, "ffprobe.exe");
+            yield return Path.Combine(directory, "ffprobe.Wrapper.exe");
+        }
+        else
+        {
+            yield return Path.Combine(directory, "ffprobe");
+            yield return Path.Combine(directory, "ffprobe.Wrapper");
+        }
     }
 
     private static string GetSiblingToolPath(string toolPath, string toolName)

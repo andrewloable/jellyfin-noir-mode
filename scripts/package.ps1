@@ -92,10 +92,12 @@ function New-PluginPackage {
         if ($runtimeId -eq 'win-x64') {
             Copy-Item -LiteralPath $wrapperSource -Destination (Join-Path $runtimeOut 'ffmpeg.exe')
             Copy-Item -LiteralPath $wrapperSource -Destination (Join-Path $runtimeOut 'ffprobe.exe')
+            Copy-Item -LiteralPath $wrapperSource -Destination (Join-Path $runtimeOut 'ffprobe.Wrapper.exe')
         }
         else {
             Copy-Item -LiteralPath $wrapperSource -Destination (Join-Path $runtimeOut 'ffmpeg')
             Copy-Item -LiteralPath $wrapperSource -Destination (Join-Path $runtimeOut 'ffprobe')
+            Copy-Item -LiteralPath $wrapperSource -Destination (Join-Path $runtimeOut 'ffprobe.Wrapper')
         }
     }
 
