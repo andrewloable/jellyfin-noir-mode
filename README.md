@@ -2,14 +2,16 @@
 
 A Jellyfin plugin that adds real-time Noir Mode playback using FFmpeg filters. It lets selected videos play in cinematic black-and-white styles without modifying the original media files.
 
-**Important:** Noir Mode only affects playback when Jellyfin is actively transcoding the video on the server. If the video Direct Plays or Direct Streams, or if transcoding is disabled for that playback session, the server FFmpeg wrapper is bypassed and Noir Mode will not change the picture.
+**Important client support:** The Noir Mode item is injected into the server-hosted Jellyfin Web client only. It is not a native control in Jellyfin Media Player, mobile apps, TV apps, or other clients unless those clients are loading the server-provided Jellyfin Web UI.
+
+**Important playback support:** Noir Mode only affects playback when Jellyfin is actively transcoding the video on the server. If the video Direct Plays or Direct Streams, or if transcoding is disabled for that playback session, the server FFmpeg wrapper is bypassed and Noir Mode will not change the picture.
 
 ## Features
 
 * Per-video Noir Mode presets, disabled by default.
 * Server-side FFmpeg filtering during Jellyfin video transcoding.
 * Bundled FFmpeg wrapper for Windows, Linux, Docker, and macOS servers.
-* Normal Jellyfin playback output, so supported clients do not need a Noir Mode-specific client plugin.
+* Web-client More-menu integration for setting per-video overrides.
 * Original media files are never modified.
 
 ## Presets
@@ -24,6 +26,7 @@ A Jellyfin plugin that adds real-time Noir Mode playback using FFmpeg filters. I
 
 * Jellyfin Server `10.11.0.0`
 * Jellyfin FFmpeg
+* Server-hosted Jellyfin Web UI for the Noir Mode menu item
 * Server-side video transcoding enabled and actually used when the video is played
 
 ## Installation
@@ -86,6 +89,8 @@ Noir Mode applies only to videos with a per-video preset override. Videos are di
 
 After the wrapper is configured, Noir Mode is selected per video. Videos without a saved Noir Mode preset continue to play normally.
 
+The interactive Noir Mode menu is a Jellyfin Web integration. For non-web clients, set the override from Jellyfin Web or from the plugin settings page, then play through a path that forces server-side video transcoding.
+
 ### Jellyfin Web
 
 1. Open a video details page in the server-hosted Jellyfin Web UI.
@@ -94,7 +99,7 @@ After the wrapper is configured, Noir Mode is selected per video. Videos without
 4. Choose **Off** or one of the built-in Noir Mode presets.
 5. Play the video through a Jellyfin playback path that transcodes video.
 
-The Jellyfin Web menu saves the video's server-side Noir Mode override. Other Jellyfin clients use that saved setting when playback transcodes video, even if they do not show a Noir Mode menu item.
+The Jellyfin Web menu saves the video's server-side Noir Mode override. Other Jellyfin clients may use that saved setting only when their playback session transcodes video through the server FFmpeg wrapper. If they Direct Play or Direct Stream, Noir Mode is bypassed.
 
 For Docker installs, Jellyfin Web's `index.html` may be owned by `root`, while Jellyfin runs as a non-root user. If the More-menu item does not appear and the Jellyfin log says Noir Mode could not update `index.html` because access was denied, run the web integration helper on the Docker host and hard-refresh Jellyfin Web:
 
@@ -112,7 +117,7 @@ docker restart jellyfin
 
 ### Jellyfin Media Player
 
-Jellyfin Media Player shows the video-page **Noir Mode** More-menu item only when it loads the server-provided Jellyfin Web client. If it uses its bundled or external repo web client, it will not load the server `index.html` patch that injects `NoirMode/web/video-page.js`.
+Jellyfin Media Player does not have a native Noir Mode menu item. It shows the video-page **Noir Mode** More-menu item only when it loads the server-provided Jellyfin Web client. If it uses its bundled or external repo web client, it will not load the server `index.html` patch that injects `NoirMode/web/video-page.js`.
 
 To use the menu item in Jellyfin Media Player, open its client settings, enable the server-provided web client option (`ForceExternalWebclient` in the client configuration), then reconnect to the server. If the menu item still does not appear, set the video's override from the Noir Mode plugin settings page instead.
 
@@ -145,7 +150,8 @@ No media files are modified by Noir Mode.
 * Real-time filtering can increase CPU or GPU usage.
 * Stream copy, complex filter graphs, and unsupported hardware filter chains are passed through unchanged.
 * Custom FFmpeg filters are not supported.
-* The Jellyfin Web More-menu item is available only in Jellyfin Web clients that load the server-hosted web UI.
+* The Noir Mode More-menu item is available only in Jellyfin Web clients that load the server-hosted web UI.
+* Native Jellyfin clients that do not load server-hosted Jellyfin Web must use the plugin settings page or Jellyfin Web to set per-video overrides.
 
 ## Troubleshooting
 
