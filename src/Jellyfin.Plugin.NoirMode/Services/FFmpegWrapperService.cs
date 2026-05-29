@@ -210,9 +210,7 @@ public sealed class FFmpegWrapperService
             return null;
         }
 
-        var executableName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? "Jellyfin.Plugin.NoirMode.Wrapper.exe"
-            : "Jellyfin.Plugin.NoirMode.Wrapper";
+        var executableName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "ffmpeg.exe" : "ffmpeg";
         var runtime = GetRuntimeIdentifier();
         if (runtime is null)
         {
@@ -248,17 +246,21 @@ public sealed class FFmpegWrapperService
     {
         var wrapperConfigPath = GetWrapperConfigPath(wrapperPath)
             ?? throw new InvalidOperationException("Unable to determine wrapper config path.");
+        var realFfprobePath = GetSiblingToolPath(realFfmpegPath, "ffprobe");
         var json = JsonSerializer.Serialize(new
         {
             realFfmpegPath,
-            stateFilePath
+            realFfprobePath,
+            stateFilePath,
+            debugLogging = false
         }, new JsonSerializerOptions { WriteIndented = true });
 
         File.WriteAllText(wrapperConfigPath, json);
         _logger.LogInformation(
-            "Noir Mode wrapper config written: wrapperConfigPath={WrapperConfigPath}; realFfmpegPath={RealFfmpegPath}; stateFilePath={StateFilePath}",
+            "Noir Mode wrapper config written: wrapperConfigPath={WrapperConfigPath}; realFfmpegPath={RealFfmpegPath}; realFfprobePath={RealFfprobePath}; stateFilePath={StateFilePath}",
             wrapperConfigPath,
             realFfmpegPath,
+            realFfprobePath,
             stateFilePath);
     }
 
@@ -282,15 +284,24 @@ public sealed class FFmpegWrapperService
             return;
         }
 
-        var mode = File.GetUnixFileMode(wrapperPath);
-        var executableMode = UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute;
-        if ((mode & executableMode) == executableMode)
+        foreach (var path in GetWrapperExecutablePaths(wrapperPath))
         {
-            return;
-        }
+            if (!File.Exists(path))
+            {
+                _logger.LogWarning("Noir Mode wrapper executable permission check skipped: companion executable is missing at {WrapperPath}", path);
+                continue;
+            }
 
-        File.SetUnixFileMode(wrapperPath, mode | executableMode);
-        _logger.LogInformation("Noir Mode wrapper executable permissions set: wrapperPath={WrapperPath}", wrapperPath);
+            var mode = File.GetUnixFileMode(path);
+            var executableMode = UnixFileMode.UserExecute | UnixFileMode.GroupExecute | UnixFileMode.OtherExecute;
+            if ((mode & executableMode) == executableMode)
+            {
+                continue;
+            }
+
+            File.SetUnixFileMode(path, mode | executableMode);
+            _logger.LogInformation("Noir Mode wrapper executable permissions set: wrapperPath={WrapperPath}", path);
+        }
     }
 
     private static string? GetRuntimeIdentifier()
@@ -324,6 +335,32 @@ public sealed class FFmpegWrapperService
             Path.GetFullPath(left),
             Path.GetFullPath(right),
             RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+    }
+
+    private static IEnumerable<string> GetWrapperExecutablePaths(string wrapperPath)
+    {
+        yield return wrapperPath;
+
+        var directory = Path.GetDirectoryName(wrapperPath);
+        if (string.IsNullOrWhiteSpace(directory))
+        {
+            yield break;
+        }
+
+        yield return Path.Combine(directory, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "ffprobe.exe" : "ffprobe");
+    }
+
+    private static string GetSiblingToolPath(string toolPath, string toolName)
+    {
+        var directory = Path.GetDirectoryName(toolPath);
+        var extension = Path.GetExtension(toolPath);
+        var fileName = string.Equals(extension, ".exe", StringComparison.OrdinalIgnoreCase)
+            ? $"{toolName}.exe"
+            : toolName;
+
+        return string.IsNullOrWhiteSpace(directory)
+            ? fileName
+            : Path.Combine(directory, fileName);
     }
 }
 

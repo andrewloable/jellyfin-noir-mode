@@ -86,7 +86,17 @@ function New-PluginPackage {
         $runtimeOut = Join-Path $bundledWrapperOut $runtimeId
         New-Item -ItemType Directory -Path $runtimeOut | Out-Null
         $wrapperName = if ($runtimeId -eq 'win-x64') { 'Jellyfin.Plugin.NoirMode.Wrapper.exe' } else { 'Jellyfin.Plugin.NoirMode.Wrapper' }
-        Copy-Item -LiteralPath (Join-Path (Join-Path $wrapperOut $runtimeId) $wrapperName) -Destination $runtimeOut
+        $wrapperSource = Join-Path (Join-Path $wrapperOut $runtimeId) $wrapperName
+        Copy-Item -LiteralPath $wrapperSource -Destination $runtimeOut
+
+        if ($runtimeId -eq 'win-x64') {
+            Copy-Item -LiteralPath $wrapperSource -Destination (Join-Path $runtimeOut 'ffmpeg.exe')
+            Copy-Item -LiteralPath $wrapperSource -Destination (Join-Path $runtimeOut 'ffprobe.exe')
+        }
+        else {
+            Copy-Item -LiteralPath $wrapperSource -Destination (Join-Path $runtimeOut 'ffmpeg')
+            Copy-Item -LiteralPath $wrapperSource -Destination (Join-Path $runtimeOut 'ffprobe')
+        }
     }
 
     $zipPath = Join-Path $artifacts "$Name.zip"

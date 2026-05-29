@@ -4,15 +4,15 @@ namespace Jellyfin.Plugin.NoirMode.Wrapper;
 
 public static class FfmpegProcess
 {
-    public static async Task<int> RunAsync(string realFfmpegPath, IReadOnlyList<string> args, CancellationToken cancellationToken)
+    public static async Task<int> RunAsync(string executablePath, IReadOnlyList<string> args, bool debugLogging, CancellationToken cancellationToken)
     {
-        if (!File.Exists(realFfmpegPath))
+        if (!File.Exists(executablePath))
         {
-            Console.Error.WriteLine($"NoirModeWrapper event=real-ffmpeg-missing realFfmpegPath=\"{realFfmpegPath}\"");
+            Console.Error.WriteLine($"NoirModeWrapper event=real-tool-missing executablePath=\"{executablePath}\"");
             return 127;
         }
 
-        var startInfo = new ProcessStartInfo(realFfmpegPath)
+        var startInfo = new ProcessStartInfo(executablePath)
         {
             UseShellExecute = false,
             RedirectStandardError = false,
@@ -24,11 +24,15 @@ public static class FfmpegProcess
             startInfo.ArgumentList.Add(arg);
         }
 
-        Console.Error.WriteLine($"NoirModeWrapper event=real-ffmpeg-start realFfmpegPath=\"{realFfmpegPath}\" argumentCount={args.Count}");
+        if (debugLogging)
+        {
+            Console.Error.WriteLine($"NoirModeWrapper event=real-tool-start executablePath=\"{executablePath}\" argumentCount={args.Count}");
+        }
+
         using var process = Process.Start(startInfo);
         if (process is null)
         {
-            Console.Error.WriteLine("NoirModeWrapper event=real-ffmpeg-start-failed");
+            Console.Error.WriteLine("NoirModeWrapper event=real-tool-start-failed");
             return 127;
         }
 

@@ -11,12 +11,25 @@ WrapperOptions options;
 try
 {
     options = WrapperOptions.FromEnvironmentOrConfig();
-    Console.Error.WriteLine($"NoirModeWrapper event=options-loaded configPath=\"{options.ConfigPath}\" usedConfigFile={options.UsedConfigFile} realFfmpegPath=\"{options.RealFfmpegPath}\" stateFilePath=\"{options.StateFilePath}\"");
+    if (options.DebugLogging)
+    {
+        Console.Error.WriteLine($"NoirModeWrapper event=options-loaded configPath=\"{options.ConfigPath}\" usedConfigFile={options.UsedConfigFile} realFfmpegPath=\"{options.RealFfmpegPath}\" realFfprobePath=\"{options.RealFfprobePath}\" stateFilePath=\"{options.StateFilePath}\"");
+    }
 }
 catch (InvalidOperationException ex)
 {
     Console.Error.WriteLine($"NoirModeWrapper event=options-error message=\"{ex.Message}\"");
     return 127;
+}
+
+if (IsFfprobeInvocation())
+{
+    if (options.DebugLogging)
+    {
+        Console.Error.WriteLine($"NoirModeWrapper event=ffprobe-delegate realFfprobePath=\"{options.RealFfprobePath}\" argumentCount={args.Length}");
+    }
+
+    return await FfmpegProcess.RunAsync(options.RealFfprobePath, args, options.DebugLogging, CancellationToken.None).ConfigureAwait(false);
 }
 
 NoirState state;
@@ -32,8 +45,25 @@ catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or S
 
 var injector = new NoirFilterInjector();
 var decision = injector.Inject(args, state);
-Console.Error.WriteLine($"NoirModeWrapper event=inject-decision reason={decision.Reason} modified={decision.Modified} applied={decision.Applied} inputPath=\"{decision.InputPath ?? "<none>"}\" argumentCount={args.Length}");
+if (options.DebugLogging)
+{
+    Console.Error.WriteLine($"NoirModeWrapper event=inject-decision reason={decision.Reason} modified={decision.Modified} applied={decision.Applied} inputPath=\"{decision.InputPath ?? "<none>"}\" argumentCount={args.Length}");
+}
 
-var exitCode = await FfmpegProcess.RunAsync(options.RealFfmpegPath, decision.Arguments, CancellationToken.None).ConfigureAwait(false);
-Console.Error.WriteLine($"NoirModeWrapper event=real-ffmpeg-exit exitCode={exitCode}");
+var exitCode = await FfmpegProcess.RunAsync(options.RealFfmpegPath, decision.Arguments, options.DebugLogging, CancellationToken.None).ConfigureAwait(false);
+if (options.DebugLogging)
+{
+    Console.Error.WriteLine($"NoirModeWrapper event=real-ffmpeg-exit exitCode={exitCode}");
+}
+
 return exitCode;
+
+static bool IsFfprobeInvocation()
+{
+    var processName = Environment.GetCommandLineArgs().FirstOrDefault();
+    var executableName = string.IsNullOrWhiteSpace(processName)
+        ? null
+        : Path.GetFileNameWithoutExtension(processName);
+
+    return string.Equals(executableName, "ffprobe", StringComparison.OrdinalIgnoreCase);
+}

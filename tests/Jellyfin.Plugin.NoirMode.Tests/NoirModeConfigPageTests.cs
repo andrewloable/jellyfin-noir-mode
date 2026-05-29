@@ -72,8 +72,9 @@ public sealed class NoirModeConfigPageTests
         var service = File.ReadAllText(FindProjectFilePath("Services", "FFmpegWrapperService.cs"));
 
         Assert.Contains("EnsureWrapperExecutable(wrapperPath)", service);
-        Assert.Contains("File.GetUnixFileMode(wrapperPath)", service);
-        Assert.Contains("File.SetUnixFileMode(wrapperPath", service);
+        Assert.Contains("File.GetUnixFileMode(path)", service);
+        Assert.Contains("File.SetUnixFileMode(path", service);
+        Assert.Contains("GetWrapperExecutablePaths(wrapperPath)", service);
         Assert.Contains("UnixFileMode.UserExecute", service);
     }
 

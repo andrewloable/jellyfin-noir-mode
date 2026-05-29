@@ -79,8 +79,10 @@ Linuxserver.io Jellyfin images launch Jellyfin with a container-level `--ffmpeg=
 
 ```yaml
 environment:
-  - FFMPEG_PATH=/config/data/plugins/Noir Mode_0.1.0.0/wrapper/linux-x64/Jellyfin.Plugin.NoirMode.Wrapper
+  - FFMPEG_PATH=/config/data/plugins/Noir Mode_0.1.0.0/wrapper/linux-x64/ffmpeg
 ```
+
+The bundle also includes a matching `ffprobe` wrapper in the same directory. Keep both files together.
 
 ### 3. Enable Noir Mode
 

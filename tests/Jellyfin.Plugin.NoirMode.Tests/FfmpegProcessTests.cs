@@ -11,6 +11,7 @@ public sealed class FfmpegProcessTests
         var code = await FfmpegProcess.RunAsync(
             Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "missing-ffmpeg"),
             [],
+            false,
             CancellationToken.None);
 
         Assert.Equal(127, code);
@@ -26,7 +27,7 @@ public sealed class FfmpegProcessTests
             ? new[] { "/c", "exit", "0" }
             : ["-c", "exit 0"];
 
-        var code = await FfmpegProcess.RunAsync(command, args, CancellationToken.None);
+        var code = await FfmpegProcess.RunAsync(command, args, false, CancellationToken.None);
 
         Assert.Equal(0, code);
     }
